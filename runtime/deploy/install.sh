@@ -17,6 +17,7 @@ docker build -q -t vultr-runtime-egress-proxy:latest "$SRC/egress-proxy"
 echo "==> installing controller to $DEST"
 mkdir -p "$DEST"
 rsync -a --delete --exclude benchmark/results "$SRC/controller" "$SRC/deploy" "$SRC/benchmark" "$SRC/client" "$DEST/"
+install -m 0644 "$SRC/BACKEND_HANDOFF.md" "$SRC/INTEGRATION.md" "$SRC/README.md" "$SRC/openapi.yaml" "$DEST/"
 chmod 0755 "$DEST/deploy/firewall.sh"
 if [ ! -x "$DEST/venv/bin/python" ]; then
   python3 -m venv --without-pip "$DEST/venv"
