@@ -143,7 +143,7 @@
 /* ---- table: search + per-value copy -------------------------------------- */
 .table__search { position: relative; display: inline-flex; align-items: center; color: var(--c-text-3); }
 .table__search .icon { position: absolute; left: 0.6rem; pointer-events: none; }
-.table__search .table__filter { padding-left: 1.9rem; }
+.table__search .table__filter { padding-left: 1.9rem; width: 12rem; max-width: 100%; }
 .cell { display: inline-flex; align-items: center; gap: var(--space-1); max-width: 100%; }
 .align-end .cell { flex-direction: row-reverse; }
 .cell__text { min-width: 0; }

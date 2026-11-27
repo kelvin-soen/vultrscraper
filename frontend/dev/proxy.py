@@ -75,6 +75,10 @@ if __name__ == "__main__":
     ap.add_argument("--backend", default="http://127.0.0.1:8000")
     ap.add_argument("--port", type=int, default=5173)
     a = ap.parse_args()
+    # The stdlib default listen backlog (5) drops connections when a browser loads ~30
+    # ES modules and stylesheets at once; raise it so no asset load is ever refused.
+    http.server.ThreadingHTTPServer.request_queue_size = 256
+    http.server.ThreadingHTTPServer.daemon_threads = True
     srv = http.server.ThreadingHTTPServer(("127.0.0.1", a.port), make_handler(a.backend.rstrip("/")))
     print(f"frontend on http://127.0.0.1:{a.port}  ->  /api/* forwarded to {a.backend}")
     srv.serve_forever()

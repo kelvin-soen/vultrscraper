@@ -1,0 +1,388 @@
+{
+ "final_run": {
+  "started": "2026-11-27T14:43:07.450Z",
+  "checks": [
+   {
+    "name": "home has no Recent section on a fresh browser",
+    "ok": true,
+    "detail": ""
+   },
+   {
+    "name": "invalid URL shows inline validation",
+    "ok": true,
+    "detail": "Website addresses can\u2019t contain spaces."
+   },
+   {
+    "name": "job A reached the report",
+    "ok": true,
+    "detail": "Starting the run \u2192 Opening the page \u2192 Writing a scraper \u2192 Running in the sandbox \u2192 Verifying results \u2192 Report ready"
+   },
+   {
+    "name": "job B reached the report",
+    "ok": true,
+    "detail": "Starting the run \u2192 Opening the page \u2192 Running the saved scraper \u2192 Attempt failed \u2192 Repairing the scraper \u2192 Running the repaired scraper \u2192 Report ready"
+   },
+   {
+    "name": "loader showed the saved scraper running",
+    "ok": true,
+    "detail": ""
+   },
+   {
+    "name": "loader showed verification (when a poll caught it)",
+    "ok": true,
+    "detail": "polls only show what the backend reports at that moment"
+   },
+   {
+    "name": "loader showed repair when the saved scraper broke",
+    "ok": true,
+    "detail": "expected: /shop/ table scraper returns [] on the v=2 card grid"
+   },
+   {
+    "name": "cube settled before the report appeared",
+    "ok": true,
+    "detail": ""
+   },
+   {
+    "name": "report header shows record count and attempts",
+    "ok": true,
+    "detail": ""
+   },
+   {
+    "name": "search filters records",
+    "ok": true,
+    "detail": "2 rows for \"putter\""
+   },
+   {
+    "name": "sorting by price (desc) works",
+    "ok": true,
+    "detail": "11\u202f995 kr"
+   },
+   {
+    "name": "individual value copy puts the raw value on the clipboard",
+    "ok": true,
+    "detail": "\"P790 Iron Set (5-PW)\""
+   },
+   {
+    "name": "history comparison is shown for the second run on the site",
+    "ok": true,
+    "detail": ""
+   },
+   {
+    "name": "Copy as Markdown",
+    "ok": true,
+    "detail": "31 lines"
+   },
+   {
+    "name": "CSV download",
+    "ok": true,
+    "detail": "siftform-70-34-217-56-8080-1f3ff15a374e.csv, 10 rows"
+   },
+   {
+    "name": "JSON download has records, metadata, evidence refs",
+    "ok": true,
+    "detail": "siftform-70-34-217-56-8080-1f3ff15a374e.json"
+   },
+   {
+    "name": "JSON has no runtime telemetry / logs / screenshot",
+    "ok": true,
+    "detail": ""
+   },
+   {
+    "name": "Python scraper download",
+    "ok": true,
+    "detail": "siftform-70-34-217-56-8080-1f3ff15a374e-scraper.py"
+   },
+   {
+    "name": "Copy link is a same-origin ?job= URL with nothing else",
+    "ok": true,
+    "detail": "http://127.0.0.1:5173/?job=1f3ff15a374e"
+   },
+   {
+    "name": "Email summary opens a mailto: with subject and body, no recipient",
+    "ok": true,
+    "detail": "mailto:?subject=siftform. report: Club Catalogue | Bogey & Birdie Golf (10 records)&body=Club Catalogue | Bogey & Birdie"
+   },
+   {
+    "name": "print layout renders all three views",
+    "ok": true,
+    "detail": ""
+   },
+   {
+    "name": "report URL survives a reload",
+    "ok": true,
+    "detail": "http://127.0.0.1:5173/?job=1f3ff15a374e#overview"
+   },
+   {
+    "name": "forgotten job opens the saved copy, clearly labelled",
+    "ok": true,
+    "detail": ""
+   },
+   {
+    "name": "Recent lists runs from this browser",
+    "ok": true,
+    "detail": ""
+   },
+   {
+    "name": "unknown job id shows 'no longer available'",
+    "ok": true,
+    "detail": ""
+   },
+   {
+    "name": "lost connection shows a reconnecting notice",
+    "ok": true,
+    "detail": ""
+   },
+   {
+    "name": "no horizontal overflow at 390 px",
+    "ok": true,
+    "detail": "0px"
+   }
+  ],
+  "stages": {
+   "A": [
+    {
+     "t": "0.0",
+     "label": "Starting the run",
+     "detail": "Contacting the backend",
+     "mode": "",
+     "report": false,
+     "finished": false,
+     "settled": false
+    },
+    {
+     "t": "0.3",
+     "label": "Opening the page",
+     "detail": "Loading it in an isolated browser sandbox",
+     "mode": "open",
+     "report": false,
+     "finished": false,
+     "settled": false
+    },
+    {
+     "t": "4.6",
+     "label": "Writing a scraper",
+     "detail": "glm-5.3 is writing Python for this page",
+     "mode": "generate",
+     "report": false,
+     "finished": false,
+     "settled": false
+    },
+    {
+     "t": "13.7",
+     "label": "Running in the sandbox",
+     "detail": "Attempt 1 in a disposable sandbox container",
+     "mode": "execute",
+     "report": false,
+     "finished": false,
+     "settled": false
+    },
+    {
+     "t": "16.3",
+     "label": "Verifying results",
+     "detail": "Checking 10 extracted records against the page and screenshot",
+     "mode": "verify",
+     "report": false,
+     "finished": false,
+     "settled": false
+    },
+    {
+     "t": "20.9",
+     "label": "Report ready",
+     "detail": "10 records verified",
+     "mode": "verify",
+     "report": false,
+     "finished": true,
+     "settled": false
+    }
+   ],
+   "B": [
+    {
+     "t": "0.0",
+     "label": "Starting the run",
+     "detail": "Contacting the backend",
+     "mode": "",
+     "report": false,
+     "finished": false,
+     "settled": false
+    },
+    {
+     "t": "0.5",
+     "label": "Opening the page",
+     "detail": "Loading it in an isolated browser sandbox",
+     "mode": "open",
+     "report": false,
+     "finished": false,
+     "settled": false
+    },
+    {
+     "t": "4.5",
+     "label": "Running the saved scraper",
+     "detail": "Reused from an earlier verified run \u2014 no AI call",
+     "mode": "execute",
+     "report": false,
+     "finished": false,
+     "settled": false
+    },
+    {
+     "t": "6.7",
+     "label": "Attempt failed",
+     "detail": "scraper returned an empty list (no products found)",
+     "mode": "repair",
+     "report": false,
+     "finished": false,
+     "settled": false
+    },
+    {
+     "t": "9.2",
+     "label": "Repairing the scraper",
+     "detail": "Attempt 1 failed: scraper returned an empty list (no products found)",
+     "mode": "repair",
+     "report": false,
+     "finished": false,
+     "settled": false
+    },
+    {
+     "t": "27.4",
+     "label": "Running the repaired scraper",
+     "detail": "Attempt 2 in a disposable sandbox container",
+     "mode": "execute",
+     "report": false,
+     "finished": false,
+     "settled": false
+    },
+    {
+     "t": "31.9",
+     "label": "Report ready",
+     "detail": "10 records verified",
+     "mode": "execute",
+     "report": false,
+     "finished": true,
+     "settled": false
+    }
+   ],
+   "D": [
+    {
+     "t": "0.0",
+     "label": "Starting the run",
+     "detail": "Contacting the backend",
+     "mode": "",
+     "report": false,
+     "finished": false,
+     "settled": false
+    },
+    {
+     "t": "0.3",
+     "label": "Opening the page",
+     "detail": "Loading it in an isolated browser sandbox",
+     "mode": "open",
+     "report": false,
+     "finished": false,
+     "settled": false
+    },
+    {
+     "t": "4.6",
+     "label": "Running the saved scraper",
+     "detail": "Reused from an earlier verified run \u2014 no AI call",
+     "mode": "execute",
+     "report": false,
+     "finished": false,
+     "settled": false
+    },
+    {
+     "t": "6.9",
+     "label": "Verifying results",
+     "detail": "Checking 10 extracted records against the page and screenshot",
+     "mode": "verify",
+     "report": false,
+     "finished": false,
+     "settled": false
+    },
+    {
+     "t": "9.1",
+     "label": "Report ready",
+     "detail": "10 records verified",
+     "mode": "verify",
+     "report": false,
+     "finished": true,
+     "settled": false
+    }
+   ]
+  },
+  "resourceErrors": 3,
+  "finished": "2026-11-27T14:44:38.296Z"
+ },
+ "failure_path_run1": {
+  "stages": [
+   {
+    "t": "0.0",
+    "label": "Starting the run",
+    "detail": "Contacting the backend",
+    "mode": "",
+    "report": false,
+    "finished": false,
+    "settled": false
+   },
+   {
+    "t": "0.3",
+    "label": "Opening the page",
+    "detail": "Loading it in an isolated browser sandbox",
+    "mode": "open",
+    "report": false,
+    "finished": false,
+    "settled": false
+   },
+   {
+    "t": "21.0",
+    "label": "Writing a scraper",
+    "detail": "glm-5.3 is writing Python for this page",
+    "mode": "generate",
+    "report": false,
+    "finished": false,
+    "settled": false
+   },
+   {
+    "t": "72.0",
+    "label": "Repairing the scraper",
+    "detail": "Attempt 1 failed: scraper returned an empty list (no products found)",
+    "mode": "repair",
+    "report": false,
+    "finished": false,
+    "settled": false
+   },
+   {
+    "t": "192.6",
+    "label": "Repairing the scraper",
+    "detail": "Attempt 2 failed: AI code model failed: glm-5.3 did not answer within 120 s",
+    "mode": "repair",
+    "report": false,
+    "finished": false,
+    "settled": false
+   },
+   {
+    "t": "207.5",
+    "label": "Running the repaired scraper",
+    "detail": "Attempt 3 in a disposable sandbox container",
+    "mode": "execute",
+    "report": false,
+    "finished": false,
+    "settled": false
+   },
+   {
+    "t": "209.9",
+    "label": "Extraction failed",
+    "detail": "no working scraper after 3 attempts",
+    "mode": "execute",
+    "report": false,
+    "finished": true,
+    "settled": false
+   }
+  ],
+  "checks": [
+   {
+    "name": "unreachable site ends in a clear failure, never a fake success",
+    "ok": true,
+    "detail": "Extraction failed: no working scraper after 3 attempts"
+   }
+  ]
+ }
+}

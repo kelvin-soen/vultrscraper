@@ -1,0 +1,124 @@
+{
+  "schema": "siftform.report/v1",
+  "exported_at": "2026-11-27T14:44:15.534Z",
+  "report": {
+    "id": "1f3ff15a374e",
+    "url": "http://70.34.217.56:8080/shop///?v=2",
+    "title": "Club Catalogue | Bogey & Birdie Golf",
+    "status": "done",
+    "outcome": "Self-healed",
+    "started_at": "2026-11-27T14:43:35.552Z",
+    "finished_at": "2026-11-27T14:44:07.356Z",
+    "times_observed_by": "browser",
+    "scrape_mode": "html"
+  },
+  "records": [
+    {
+      "name": "Stealth 2 Driver",
+      "price_sek": 6495
+    },
+    {
+      "name": "Paradym Ai Smoke Driver",
+      "price_sek": 6795
+    },
+    {
+      "name": "G430 Max Fairway Wood",
+      "price_sek": 4295
+    },
+    {
+      "name": "TSR2 Hybrid",
+      "price_sek": 3495
+    },
+    {
+      "name": "P790 Iron Set (5-PW)",
+      "price_sek": 11995
+    },
+    {
+      "name": "Apex Pro Iron Set (4-PW)",
+      "price_sek": 9495
+    },
+    {
+      "name": "Vokey SM10 Wedge",
+      "price_sek": 2195
+    },
+    {
+      "name": "RTX 6 ZipCore Wedge",
+      "price_sek": 2095
+    },
+    {
+      "name": "Phantom 5.5 Putter",
+      "price_sek": 5995
+    },
+    {
+      "name": "Spider Tour X Putter",
+      "price_sek": 4495
+    }
+  ],
+  "metadata": {
+    "record_count": 10,
+    "fields": [
+      {
+        "key": "name",
+        "type": "text"
+      },
+      {
+        "key": "price_sek",
+        "type": "money",
+        "currency": "SEK"
+      }
+    ],
+    "attempts": 2,
+    "repaired": true,
+    "scraper_reused": true,
+    "models": {
+      "code": "glm-5.3",
+      "vision": "qwen3.8-flash-next"
+    }
+  },
+  "verification": {
+    "final_attempt": 2,
+    "verdict": "pass",
+    "attempts": [
+      {
+        "n": 1,
+        "source": "saved",
+        "verdict": "fail",
+        "reason": "scraper returned an empty list (no products found)",
+        "exit_code": 0,
+        "timed_out": false,
+        "duration_ms": 2222,
+        "record_count": 0
+      },
+      {
+        "n": 2,
+        "source": "repaired",
+        "verdict": "pass",
+        "reason": "10 items; evidence check: all 10 prices appear in the page text; vision check agrees: 10/10 visible prices matched [qwen3.8-flash-next]",
+        "exit_code": 0,
+        "timed_out": false,
+        "duration_ms": 2325,
+        "record_count": 10
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "id": "page",
+      "kind": "source_page",
+      "url": "http://70.34.217.56:8080/shop///?v=2",
+      "note": "Page the records were extracted from."
+    },
+    {
+      "id": "screenshot",
+      "kind": "screenshot",
+      "note": "Screenshot captured by the sandbox; not embedded in this export."
+    },
+    {
+      "id": "checks",
+      "kind": "verification",
+      "attempt": 2,
+      "note": "10 items; evidence check: all 10 prices appear in the page text; vision check agrees: 10/10 visible prices matched [qwen3.8-flash-next]"
+    }
+  ],
+  "security_events": []
+}

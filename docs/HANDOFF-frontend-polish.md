@@ -73,7 +73,22 @@ Local frontend against the live backend: `python3 frontend/dev/proxy.py --backen
 - Unit: `cd frontend && node --test tests/*.test.mjs` → **47/47**. Backend: `MOCK_SANDBOX=1 .venv/bin/python -m unittest discover -s tests` → **19/19**.
 - End-to-end: `frontend/dev/e2e-live.mjs` (Playwright + local Chrome, real jobs). Results: see §4.1, screenshots in `docs/screenshots/polish/`.
 
-<!-- E2E_RESULTS -->
+### 4.1 End-to-end results (live backend, real sandbox, real glm-5.3 / qwen vision)
+
+Final run: **27/27 checks passed** (`docs/screenshots/polish/e2e-log.json`). Loader timelines as the UI showed them:
+
+| Run | URL | What the loader showed (seconds) | Outcome |
+|---|---|---|---|
+| A | `/shop///` (fresh key) | Opening the page 0.3 → Writing a scraper 4.6 → Running in the sandbox 13.7 → Verifying results 16.3 → Report ready 20.9 | Verified, scraper saved |
+| B | `/shop///?v=2` (card layout) | Opening 0.5 → Running the saved scraper 4.5 → **Attempt failed** (empty list) 6.7 → **Repairing the scraper** 9.2 → Running the repaired scraper 27.4 → Report ready 31.9 | Self-healed and verified, "2 values changed since your run" |
+| D (mobile, 390 px) | `/shop?v=evil` | Opening 0.3 → Running the saved scraper 4.6 → Verifying 6.9 → Report ready 9.1 | Verified |
+| C (first run) | unresolvable domain | Opening → Writing a scraper 21 s → Repairing 72 s → Repairing 193 s → Running the repaired scraper → **Extraction failed** 210 s | "no working scraper after 3 attempts", no report, no fake success |
+
+Verified by the run: search, sort, per-value copy (raw value on the clipboard), Markdown copy, CSV/JSON/.py downloads (contents checked; JSON free of runtime telemetry/logs/screenshot), copy link (same origin, `?job=` only), mailto summary (≤ 1800 chars, no recipient), print → PDF (all views), reload keeps the report, a forgotten job opens the labelled saved copy, Recent history, unknown job id, connection loss ("Reconnecting…"), no horizontal overflow at 390 px, no page or console errors, all stylesheets loaded on every page load.
+
+Not verifiable here: real cancellation (no backend support), and the intelligence layer against the live VM (not deployed there; covered by its own 19 backend tests with `MOCK_SANDBOX=1`).
+
+Screenshots (`docs/screenshots/polish/`): `01–04` home (empty, validation, recent, row menu) · `05-loader-repair-01…07` every loader stage of run B · `06` unreachable-site repair · `10–15` report (overview, data, copy toast, agent, export and share menus) · `16-pdf-page1.png` · `17` saved copy · `20` light theme · `30–32` failed run, unknown job, reconnecting · `40–43` mobile. Sample exports: `sample-report.md`, `sample-records.csv`, `sample-results.json`.
 
 ## 5. What still depends on backend changes
 

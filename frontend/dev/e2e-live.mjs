@@ -46,6 +46,14 @@ async function newPage({ width = 1440, height = 900, scheme = "dark", mobile = f
     permissions: ["clipboard-read", "clipboard-write"],
   });
   const page = await ctx.newPage();
+  // Every page load must have all stylesheets applied before any check or screenshot.
+  page.on("load", async () => {
+    try {
+      const n = await page.evaluate(() => [...document.styleSheets].filter((ss) => { try { return ss.cssRules.length > 0; } catch { return false; } }).length);
+      const want = await page.evaluate(() => document.querySelectorAll('link[rel="stylesheet"]').length);
+      if (n < want) check("all stylesheets loaded", false, `${n}/${want} on ${page.url()}`);
+    } catch { /* navigated away */ }
+  });
   page.on("pageerror", (e) => check("no page errors", false, e.message));
   // Resource-load errors (favicon 404s, transient upstream 502s handled by the poller's retry) are logged, not app errors.
   page.on("console", (m) => {
