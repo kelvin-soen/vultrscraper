@@ -94,11 +94,12 @@ export function icon(name, { size = 16, label } = {}) {
 
 /* ---- brand mark -------------------------------------------------------- */
 /*
- * siftform. mark: a rounded isometric cube, three visible faces in one tone.
+ * siftform. mark: the original tile-and-dot as a rounded isometric cube.
  * 32px grid. The silhouette is a pointy-top hexagon with rounded outer
  * corners; the faces are plain rhombi clipped to it, so the inner edges stay
- * crisp. Face tones come from --c-mark-* tokens (light and dark). icon.svg
- * uses the same geometry.
+ * crisp. Each face carries the dot: a circle (r 2.6) drawn flat on that face
+ * via an affine matrix, so all three foreshorten correctly. Tones come from
+ * --c-mark-* tokens (light and dark). icon.svg uses the same geometry.
  */
 const MARK = {
   outline:
@@ -106,6 +107,13 @@ const MARK = {
   top: "M16 1.5L28.56 8.75L16 16L3.44 8.75Z",
   left: "M3.44 8.75L16 16L16 30.5L3.44 23.25Z",
   right: "M16 16L28.56 8.75L28.56 23.25L16 30.5Z",
+  dotRadius: "2.6",
+  /* matrix(u.x u.y v.x v.y cx cy): the face's two edge directions + its centre */
+  dots: [
+    "matrix(0.866 0.5 -0.866 0.5 16 8.75)",
+    "matrix(0.866 0.5 0 1 9.72 19.625)",
+    "matrix(0.866 -0.5 0 1 22.28 19.625)",
+  ],
 };
 
 let markSeq = 0;
@@ -125,6 +133,9 @@ export function brandMark({ className = "wordmark__glyph" } = {}) {
     faces.append(svgEl("path", { d: MARK[face], class: `wordmark__${face}` }));
   }
   svg.append(clip, faces);
+  for (const transform of MARK.dots) {
+    svg.append(svgEl("circle", { r: MARK.dotRadius, transform, class: "wordmark__dot" }));
+  }
   return svg;
 }
 

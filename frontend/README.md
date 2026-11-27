@@ -57,4 +57,4 @@ interpretation of backend data lives in `js/model/job.js`.
   `--art-*` tokens, so generative or dithered visuals can be added later
   without touching components.
 
-The product is **siftform.** (always lowercase, with the period). The name lives in `js/config.js`. The mark is a rounded isometric cube with three faces in one tone (`--c-mark-*` tokens), drawn by `brandMark()` in `js/dom.js`; `icon.svg` is the same geometry for the favicon.
+The product is **siftform.** (always lowercase, with the period). The name lives in `js/config.js`. The mark is the original tile-and-dot as a rounded isometric cube: three faces in one tone, each with the dot in perspective (`--c-mark-*` tokens), drawn by `brandMark()` in `js/dom.js`; `icon.svg` is the same geometry for the favicon.

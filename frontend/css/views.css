@@ -51,6 +51,7 @@ body:not([data-view="home"]) .topbar { border-bottom-color: var(--c-border); }
 .wordmark__top { fill: var(--c-mark-top); }
 .wordmark__left { fill: var(--c-mark-left); }
 .wordmark__right { fill: var(--c-mark-right); }
+.wordmark__dot { fill: var(--c-mark-dot); }
 .wordmark:hover .wordmark__glyph { transform: translateY(-1px); }
 
 .main {
