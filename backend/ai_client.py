@@ -16,11 +16,28 @@ import verify
 
 log = logging.getLogger("uvicorn.error")  # shows up in the uvicorn/tmux log
 
+# Per job thread: total deadline (set_deadline) and which code model answered last.
+_tl = threading.local()
+
 _client = None
 
 
 class AIError(RuntimeError):
     """An AI call failed or exceeded its time limit (message is safe to show)."""
+
+
+class TimeLimit(AIError):
+    """The job's total time limit leaves no time for this AI call."""
+
+
+def set_deadline(monotonic_deadline: float | None) -> None:
+    """Total job deadline for AI calls made from this (job) thread."""
+    _tl.deadline = monotonic_deadline
+
+
+def time_left() -> float | None:
+    d = getattr(_tl, "deadline", None)
+    return None if d is None else d - time.monotonic()
 
 
 def _get_client() -> OpenAI:
@@ -97,6 +114,11 @@ def _chat(messages: list[dict], model: str = config.CODE_MODEL,
     """One AI call with a hard total deadline of `limit` s (default AI_TIMEOUT_S),
     including one retry when a reasoning model returns empty content. Raises AIError."""
     limit = limit or config.AI_TIMEOUT_S
+    job_left = time_left()
+    if job_left is not None:
+        if job_left < 3:
+            raise TimeLimit("job time limit reached")
+        limit = min(limit, job_left)
     start = time.monotonic()
     prompt_chars = sum(len(c.get("text", "")) if isinstance(c, dict) else len(str(c))
                        for m in messages for c in
@@ -193,21 +215,25 @@ def _html_block(html: str, mode: str = "html") -> str:
     )
 
 
-_tl = threading.local()  # which code model answered the last call in this thread
 
 
-def _code_chat(messages: list[dict]) -> str:
-    """Code-model call: CODE_MODEL, then CODE_FALLBACK_MODEL once if it fails/times out."""
+def _code_chat(messages: list[dict], extra_body: dict | None = None) -> str:
+    """Code-model call: CODE_MODEL, then CODE_FALLBACK_MODEL once if it fails/times out
+    (not when the job's time limit is what stopped it)."""
     try:
-        out = _chat(messages, model=config.CODE_MODEL)
+        out = _chat(messages, model=config.CODE_MODEL, extra_body=extra_body)
         _tl.code_model = config.CODE_MODEL
         return out
+    except TimeLimit:
+        raise
     except AIError as e:
         log.warning("code model %s failed (%s); falling back to %s", config.CODE_MODEL, e,
                     config.CODE_FALLBACK_MODEL)
         first_error = str(e)
     try:
-        out = _chat(messages, model=config.CODE_FALLBACK_MODEL)
+        out = _chat(messages, model=config.CODE_FALLBACK_MODEL, extra_body=extra_body)
+    except TimeLimit:
+        raise
     except AIError as e:
         raise AIError(f"{first_error}; fallback {e}") from None
     _tl.code_model = f"{config.CODE_FALLBACK_MODEL} (fallback)"
@@ -254,7 +280,7 @@ def fix_scraper(url: str, html: str, code: str, problem: str, stderr: str, stdou
         + _html_block(html, mode)
         + "\nWrite a fixed, complete scraper. Output only Python code."
     )
-    out = _code_chat([
+    out = _code_chat(extra_body={"reasoning_effort": "low"}, messages=[
         {"role": "system", "content": _system_prompt(mode)},
         {"role": "user", "content": user},
     ])

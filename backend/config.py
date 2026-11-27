@@ -28,6 +28,7 @@ SANDBOX_URL = os.getenv("SANDBOX_URL", "http://localhost:8001")
 MOCK_SANDBOX = os.getenv("MOCK_SANDBOX", "0") == "1"
 
 MAX_ATTEMPTS = 3
+JOB_TIME_LIMIT_S = 180  # total per job; AI calls and sandbox runs get at most the time left
 
 
 def sandbox_key() -> str:

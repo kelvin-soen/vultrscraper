@@ -36,6 +36,7 @@ class JobIn(BaseModel):
 
 
 EMPTY_REASON = "scraper returned an empty list (no products found)"
+TIME_LIMIT_MESSAGE = "time limit reached (3 min); this site may be too complex"
 JS_PAGE_MESSAGE = ("This site loads its products with JavaScript. siftform. currently scrapes HTML "
                    "pages; browser-based scraping is the next step.")
 
@@ -178,6 +179,17 @@ def _run_job(job_id: str, url: str, saved: dict | None = None) -> None:
     job = JOBS[job_id]
     saved_code = saved["code"] if saved else None
     mode = saved["mode"] if saved else "html"
+    deadline = time.monotonic() + config.JOB_TIME_LIMIT_S
+    ai_client.set_deadline(deadline)  # every AI call in this thread gets at most the time left
+
+    def left() -> float:
+        return deadline - time.monotonic()
+
+    def out_of_time(attempt: dict | None = None) -> None:
+        if attempt is not None:
+            attempt.update(verdict="fail", reason=TIME_LIMIT_MESSAGE)
+        job.update(status="failed", error=TIME_LIMIT_MESSAGE, finished_at=_now())
+
     try:
         shot = sandbox_client.screenshot(url)
         job["security"]["events"].extend(_blocked_to_events(shot.get("blocked_requests") or []))
@@ -203,6 +215,9 @@ def _run_job(job_id: str, url: str, saved: dict | None = None) -> None:
         prev = None  # last failed attempt that had code: input for the repair prompt
 
         for n in range(1, config.MAX_ATTEMPTS + 1):
+            if left() < 5:
+                out_of_time()
+                return
             if code is not None:
                 source = "saved" if (saved_code is not None and n == 1) else "repaired"
             else:
@@ -224,6 +239,9 @@ def _run_job(job_id: str, url: str, saved: dict | None = None) -> None:
                         code = ai_client.fix_scraper(url, html, prev["code"], prev["reason"],
                                                      prev["stderr"], prev["stdout"], mode)
                 except ai_client.AIError as e:
+                    if isinstance(e, ai_client.TimeLimit) or left() < 5:
+                        out_of_time(attempt)
+                        return
                     attempt.update(verdict="fail", reason=f"AI code model failed: {e}")
                     continue
                 job["models"]["code"] = attempt["code_model"] = ai_client.last_code_model()
@@ -236,17 +254,21 @@ def _run_job(job_id: str, url: str, saved: dict | None = None) -> None:
                 except ValueError as e:
                     build_error = f"rendered mode: {e}"
 
+            run_timeout = int(min(RUN_TIMEOUT_S, left()))
+            if run_timeout < 3:
+                out_of_time(attempt)
+                return
             if retarget_error or build_error:  # can't run it safely/at all
                 ok, verdict, reason, items = False, "fail", retarget_error or build_error, []
                 retarget_error = None
             else:
-                res = sandbox_client.run(run_code, timeout=RUN_TIMEOUT_S,
+                res = sandbox_client.run(run_code, timeout=run_timeout,
                                          network=(mode == "html"))
                 attempt.update(stdout=res.get("stdout", ""), stderr=res.get("stderr", ""),
                                exit_code=res.get("exit_code"), timed_out=res.get("timed_out"),
                                duration_ms=res.get("duration_ms"),
                                runtime_job_id=res.get("job_id"),
-                               sandbox=sandbox_client.sandbox_info(res, RUN_TIMEOUT_S,
+                               sandbox=sandbox_client.sandbox_info(res, run_timeout,
                                                                    network=(mode == "html")))
                 attempt["reason"] = "checking output"
                 ok, verdict, reason, items = _check_attempt(job, res, html)
