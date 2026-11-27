@@ -265,7 +265,9 @@ and get verified, structured data back in the conversation. Add it to Claude Cod
   compares against the same snapshot, so the vision check is the independent one.
 - One saved scraper per site: the key is the URL without its query string, so `/shop`
   and `/shop?v=2` share one.
-- Jobs and saved scrapers are kept in memory.
+- Jobs are kept in memory, so a restart clears them. Saved scrapers are also stored on
+  disk (`backend/data/intel/`, by the intelligence layer) with their mode, so they survive
+  restarts; `POST /api/scrapers/reset` retires them.
 - Prices are labelled `price_sek` but taken as shown on the page: non-SEK sites keep
   their own currency (e.g. £51.77 on books.toscrape.com becomes `51`).
 - Prompt-injection detection sees inline-hidden and off-screen text, not text hidden by
@@ -278,7 +280,7 @@ and get verified, structured data back in the conversation. Add it to Claude Cod
 - **Browser-based scraping:** let generated scrapers use Playwright through the
   runtime's `browser` profile (`/v1/jobs`, 1536 MB, navigation allowlist), so pages
   that need interaction (scrolling, "load more", pagination) work too.
-- Persist jobs and saved scrapers (SQLite), and key saved scrapers per page layout.
+- Persist jobs (saved scrapers already are), and key saved scrapers per page layout.
 - Per-product evidence (bounding boxes on the screenshot) for the evidence viewer.
 
 ## Working on the repo
