@@ -120,6 +120,29 @@ def _injection_events(html: str) -> list[dict]:
     return events
 
 
+# Runtime benchmark core test id -> frontend capability kind (js/model/job.js CAPABILITIES).
+_BENCH_KIND = {"infinite_loop": "timeout", "sandbox_isolation": "filesystem", "ssrf": "ssrf",
+               "prompt_injection": "prompt_injection", "secret_hygiene": "secrets",
+               "lifecycle": "cleanup"}
+
+
+def _benchmark_events(bench: dict | None) -> list[dict]:
+    """Core benchmark results as events. Runtime-wide evidence, labelled as such."""
+    if not bench:
+        return []
+    when = (bench.get("finished_at") or "unknown time").replace("T", " ").replace("Z", " UTC")
+    events = []
+    for t in bench.get("tests") or []:
+        kind = _BENCH_KIND.get(t.get("id"))
+        if not kind:
+            continue
+        result = "passed" if t.get("passed") else "failed"
+        events.append({"kind": kind, "status": result, "source": "benchmark",
+                       "detail": f"Runtime security benchmark, {when}: {t.get('name')} test "
+                                 f"{result} (runtime-wide test, not observed in this job)."})
+    return events
+
+
 def _run_job(job_id: str, url: str, saved_code: str | None = None) -> None:
     """Run the scrape loop. With `saved_code`, attempt 1 reuses it (no code-model call)."""
     job = JOBS[job_id]
@@ -131,6 +154,11 @@ def _run_job(job_id: str, url: str, saved_code: str | None = None) -> None:
             raise sandbox_client.SandboxError(f"could not load page: {str(shot['error'])[:300]}")
         job["screenshot_base64"] = shot.get("image_base64")
         html = shot.get("html") or ""
+        job["title"] = verify.page_title(html)
+        bench = sandbox_client.security_benchmark()
+        job["security"]["benchmark"] = bench
+        # After this job's own events, so a real "blocked"/"detected" decides the UI status.
+        job["security"]["events"].extend(_benchmark_events(bench))
 
         source, retarget_error = "generated", None
         if saved_code is not None:
@@ -196,7 +224,7 @@ def _start_job(url: str, saved_code: str | None = None, parent: str | None = Non
             "status": "running", "url": url, "mode": "rerun" if saved_code else "new",
             "parent": parent, "attempts": [], "results": [], "screenshot_base64": None,
             "error": None, "final_code": None, "code_model_calls": 0, "vision_calls": 0,
-            "security": {"events": []},
+            "title": None, "security": {"events": [], "benchmark": None},
         }
     threading.Thread(target=_run_job, args=(job_id, url, saved_code), daemon=True).start()
     return job_id

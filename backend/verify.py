@@ -31,6 +31,13 @@ def _drop_non_content(soup) -> None:
         tag.decompose()
 
 
+def page_title(html: str) -> str | None:
+    """The page's <title>, whitespace-collapsed (untrusted page text)."""
+    t = BeautifulSoup(html or "", "html.parser").title
+    text = " ".join(t.get_text(" ").split()) if t else ""
+    return text[:120] or None
+
+
 def visible_text(html: str) -> str:
     """Text a user would see: drops script/style/head and inline-hidden elements."""
     soup = BeautifulSoup(html or "", "html.parser")

@@ -12,6 +12,7 @@ Mock behaviour (layout chosen by the URL inside the code; "v=2" = changed layout
   otherwise it finds no products and prints [] (like a real layout change).
 """
 import base64
+import datetime
 import hashlib
 import json
 import re
@@ -227,3 +228,41 @@ def sandbox_info(run_result: dict, timeout: int, network: bool = True) -> dict:
         "timeout_s": timeout,
         "container_removed": (tel.get("cleanup") or {}).get("container_removed"),
     }
+
+
+# ---------- runtime security benchmark (GET /v1/security/benchmark) ----------
+_BENCH_TTL_S = 300
+_bench_cache: dict = {"at": 0.0, "value": None}
+
+
+def security_benchmark() -> dict | None:
+    """Compact summary of the runtime's latest published benchmark, cached 5 min.
+    None in mock mode or if the runtime has none. Runtime-wide, NOT per job."""
+    if config.MOCK_SANDBOX:
+        return None
+    now = time.time()
+    if now - _bench_cache["at"] < _BENCH_TTL_S:
+        return _bench_cache["value"]
+    value = None
+    try:
+        r = httpx.get(f"{config.SANDBOX_URL}/v1/security/benchmark", headers=_headers(), timeout=10)
+        if r.status_code == 200:
+            b = r.json()
+            tests = [{"id": t.get("id"), "name": t.get("name"), "core": bool(t.get("core")),
+                      "passed": t.get("passed") is True} for t in b.get("tests") or []]
+            fin = b.get("finished_at")
+            value = {
+                "source": "runtime security benchmark (runtime-wide, not this job)",
+                "finished_at": (datetime.datetime.fromtimestamp(fin, datetime.timezone.utc)
+                                .strftime("%Y-%m-%dT%H:%M:%SZ") if isinstance(fin, (int, float)) else None),
+                "oci_runtime": b.get("oci_runtime"),
+                "all_passed": b.get("all_passed") is True,
+                "core_passed": b.get("core_passed") is True,
+                "passed": sum(t["passed"] for t in tests),
+                "total": len(tests),
+                "tests": tests,
+            }
+    except (httpx.HTTPError, ValueError, RuntimeError):
+        value = None
+    _bench_cache.update(at=now, value=value)
+    return value
