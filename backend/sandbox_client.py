@@ -16,6 +16,7 @@ import hashlib
 import json
 import re
 import threading
+import time
 from pathlib import Path
 
 import httpx
@@ -133,20 +134,54 @@ def _mock_screenshot(url: str) -> dict:
 
 
 # ---------- real ----------
+class SandboxError(RuntimeError):
+    """Runtime call failed in a way the job should report (message is safe to show)."""
+
+
+RETRY_DELAYS_429 = [2, 4, 8, 16]  # seconds; runtime budget is 6 active jobs per key
+
+
+def _headers() -> dict:
+    return {"Authorization": f"Bearer {config.sandbox_key()}"}
+
+
+def _post(path: str, payload: dict, timeout: float) -> dict:
+    """POST to the runtime with auth. 401 -> clear error; 429 -> back off and retry."""
+    for i, delay in enumerate([0] + RETRY_DELAYS_429):
+        if delay:
+            time.sleep(delay)
+        try:
+            r = httpx.post(f"{config.SANDBOX_URL}{path}", json=payload,
+                           headers=_headers(), timeout=timeout)
+        except httpx.HTTPError as e:
+            raise SandboxError(f"runtime unreachable at {config.SANDBOX_URL}{path}: "
+                               f"{type(e).__name__}") from None
+        if r.status_code == 401:
+            raise SandboxError("runtime rejected the API key (401): check SANDBOX_API_KEY "
+                               "or /etc/vultr-runtime/backend.key")
+        if r.status_code == 429:
+            last_429 = _detail(r)
+            continue
+        if r.status_code >= 400:
+            raise SandboxError(f"runtime {path} returned {r.status_code}: {_detail(r)}")
+        return r.json()
+    raise SandboxError(f"runtime busy (429 {last_429}) after {len(RETRY_DELAYS_429)} retries")
+
+
+def _detail(r: httpx.Response) -> str:
+    try:
+        body = r.json()
+        return str(body.get("error") or body.get("detail") or body)[:300]
+    except ValueError:
+        return r.text[:300]
+
+
 def _real_run(code: str, timeout: int = 30) -> dict:
-    r = httpx.post(
-        f"{config.SANDBOX_URL}/run",
-        json={"code": code, "timeout": timeout, "network": True},
-        timeout=timeout + 30,
-    )
-    r.raise_for_status()
-    return r.json()
+    return _post("/run", {"code": code, "timeout": timeout, "network": True}, timeout + 60)
 
 
 def _real_screenshot(url: str) -> dict:
-    r = httpx.post(f"{config.SANDBOX_URL}/screenshot", json={"url": url}, timeout=90)
-    r.raise_for_status()
-    return r.json()
+    return _post("/screenshot", {"url": url}, 150)
 
 
 def run(code: str, timeout: int = 30) -> dict:

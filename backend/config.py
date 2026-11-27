@@ -20,6 +20,20 @@ MOCK_SANDBOX = os.getenv("MOCK_SANDBOX", "0") == "1"
 MAX_ATTEMPTS = 3
 
 
+def sandbox_key() -> str:
+    """Runtime API key: env SANDBOX_API_KEY, else /etc/vultr-runtime/backend.key.
+    Never log it, put it in prompts, or pass it into sandboxed code."""
+    key = os.getenv("SANDBOX_API_KEY", "").strip()
+    if not key:
+        try:
+            key = Path("/etc/vultr-runtime/backend.key").read_text().strip()
+        except OSError:
+            key = ""
+    if not key:
+        raise RuntimeError("runtime API key missing (SANDBOX_API_KEY or /etc/vultr-runtime/backend.key)")
+    return key
+
+
 def inference_key() -> str:
     key = os.getenv("VULTR_INFERENCE_KEY", "").strip()
     if not key:
