@@ -514,6 +514,26 @@ export const CAPABILITIES = [
   { key: "cleanup", label: "Automatic container destruction", kinds: ["cleanup", "container_removed", "destroy"] },
 ];
 
+const RUN_BADGE = { blocked: "Blocked in this run", detected: "Detected in this run", failed: "Failed in this run" };
+
+/**
+ * "runtime security benchmark (12/12, 11:06 UTC)". The date is added when the
+ * benchmark ran on another UTC day than the job (or today, if the job has no date),
+ * so an old benchmark never reads as fresh.
+ */
+function describeBenchmark(bench, jobDate) {
+  const parts = [];
+  if (bench && Number.isFinite(bench.passed) && Number.isFinite(bench.total)) parts.push(`${bench.passed}/${bench.total}`);
+  const at = bench ? toDate(bench.finished_at) : null;
+  if (at) {
+    const iso = at.toISOString();
+    const day = iso.slice(0, 10);
+    const refDay = (jobDate || new Date()).toISOString().slice(0, 10);
+    parts.push(`${refDay !== day ? `${day} ` : ""}${iso.slice(11, 16)} UTC`);
+  }
+  return `runtime security benchmark${parts.length ? ` (${parts.join(", ")})` : ""}`;
+}
+
 export function deriveSecurity(raw, attempts) {
   const sec = isObj(raw.security) ? raw.security : {};
   const sandbox = isObj(sec.sandbox) ? sec.sandbox : isObj(raw.sandbox) ? raw.sandbox : null;
@@ -524,12 +544,18 @@ export function deriveSecurity(raw, attempts) {
       status: str(e.status || "observed").toLowerCase(),
       detail: str(e.detail ?? e.message),
       attempt: numOrNull(e.attempt),
+      benchmark: str(e.source).toLowerCase() === "benchmark",
     }));
+  const benchmarkNote = describeBenchmark(isObj(sec.benchmark) ? sec.benchmark : null, toDate(raw.created_at));
 
+  // Events from this job and runtime-wide benchmark results are kept apart:
+  // a benchmark pass is never presented as something observed in this run.
   const capabilities = CAPABILITIES.map((cap) => {
     const evs = events.filter((e) => cap.kinds.includes(e.kind));
-    const notes = evs.map((e) => e.detail).filter(Boolean);
-    let observed = evs.length > 0;
+    const runEvs = evs.filter((e) => !e.benchmark);
+    const benchEvs = evs.filter((e) => e.benchmark);
+    const notes = runEvs.map((e) => e.detail).filter(Boolean);
+    let observed = runEvs.length > 0;
 
     if (cap.key === "timeout") {
       const t = attempts.filter((a) => a.timedOut);
@@ -550,7 +576,23 @@ export function deriveSecurity(raw, attempts) {
         notes.unshift("Container destroyed after execution.");
       }
     }
-    return { key: cap.key, label: cap.label, observed, status: evs[0]?.status || (observed ? "observed" : "not_reported"), notes };
+    if (observed) {
+      const status = runEvs[0]?.status || "observed";
+      return { key: cap.key, label: cap.label, observed, evidence: "run", status, badge: RUN_BADGE[status] || "Observed in this run", notes };
+    }
+    if (benchEvs.length) {
+      const passed = benchEvs.every((e) => e.status === "passed");
+      return {
+        key: cap.key,
+        label: cap.label,
+        observed: false,
+        evidence: "benchmark",
+        status: passed ? "passed" : "failed",
+        badge: null,
+        notes: [passed ? `Verified by ${benchmarkNote}` : `Failed in ${benchmarkNote}`],
+      };
+    }
+    return { key: cap.key, label: cap.label, observed: false, evidence: "none", status: "not_reported", badge: null, notes };
   });
 
   const runs = attempts

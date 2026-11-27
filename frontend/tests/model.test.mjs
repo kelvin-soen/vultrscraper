@@ -172,3 +172,28 @@ test("malformed payloads degrade gracefully", () => {
     assert.equal(job.status, "running");
   }
 });
+
+test("benchmark events are never shown as observed in this run", () => {
+  const bench = (kind) => ({ kind, status: "passed", source: "benchmark", detail: `Runtime security benchmark: ${kind} passed.` });
+  const job = normalizeJob({
+    status: "done",
+    created_at: "2026-11-27T12:00:00Z",
+    attempts: [attempt({ exit_code: 0, stdout: "[]" })],
+    security: {
+      events: [{ kind: "ssrf", status: "blocked", detail: "metadata request blocked" }, { kind: "prompt_injection", status: "detected", detail: "hidden instruction" }, bench("ssrf"), bench("prompt_injection"), bench("secrets")],
+      benchmark: { passed: 12, total: 12, finished_at: "2026-11-27T11:06:26Z" },
+    },
+  });
+  const cap = (k) => job.security.capabilities.find((c) => c.key === k);
+
+  assert.equal(cap("ssrf").evidence, "run");
+  assert.equal(cap("ssrf").badge, "Blocked in this run");
+  assert.deepEqual(cap("ssrf").notes, ["metadata request blocked"]);
+  assert.equal(cap("prompt_injection").badge, "Detected in this run");
+  assert.deepEqual(cap("prompt_injection").notes, ["hidden instruction"]);
+
+  assert.equal(cap("secrets").evidence, "benchmark");
+  assert.equal(cap("secrets").observed, false);
+  assert.deepEqual(cap("secrets").notes, ["Verified by runtime security benchmark (12/12, 11:06 UTC)"]);
+  assert.equal(cap("filesystem").evidence, "none");
+});

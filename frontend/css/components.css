@@ -496,6 +496,27 @@ button.evidence__row:hover, .evidence__row.is-active { background: var(--c-highl
 .cap .mark { margin-top: 0.2rem; }
 .cap__label { font-size: var(--text-sm); font-weight: var(--weight-medium); }
 .cap:not(.cap--observed) .cap__label { color: var(--c-text-2); font-weight: var(--weight-regular); }
+.cap--observed .cap__label { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.cap__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.0625rem var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--c-inverse);
+  color: var(--c-on-inverse);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+}
+.cap--benchmark { cursor: help; }
+.cap--benchmark .mark--done { background: transparent; border-color: var(--c-text-4); color: var(--c-text-3); animation: none; }
+
+/* Sandbox executions: fit the column instead of scrolling sideways. */
+.ledger--compact { table-layout: auto; }
+.table__scroll .ledger--compact thead th { padding: var(--space-2) var(--space-2); white-space: normal; vertical-align: bottom; }
+.table__scroll .ledger--compact td { padding: var(--space-2) var(--space-2); overflow-wrap: normal; word-break: normal; }
+.table__scroll .ledger--compact th:first-child, .table__scroll .ledger--compact td:first-child { padding-left: var(--space-3); }
+.table__scroll .ledger--compact th:last-child, .table__scroll .ledger--compact td:last-child { padding-right: var(--space-3); }
 
 /* ---- Connection notice ---------------------------------------------- */
 .conn {
