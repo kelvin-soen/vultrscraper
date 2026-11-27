@@ -190,3 +190,33 @@ def run(code: str, timeout: int = 30) -> dict:
 
 def screenshot(url: str) -> dict:
     return _mock_screenshot(url) if config.MOCK_SANDBOX else _real_screenshot(url)
+
+
+def job_telemetry(job_id: str | None) -> dict | None:
+    """Runtime telemetry for a finished job (GET /v1/jobs/{id} -> telemetry), or None."""
+    if config.MOCK_SANDBOX:
+        return {"oci_runtime": "mock", "cleanup": {"container_removed": None}}
+    if not job_id:
+        return None
+    try:
+        r = httpx.get(f"{config.SANDBOX_URL}/v1/jobs/{job_id}", headers=_headers(), timeout=10)
+        if r.status_code != 200:
+            return None
+        return r.json().get("telemetry") or None
+    except (httpx.HTTPError, ValueError):
+        return None
+
+
+_RUNTIME_NAMES = {"runsc": "gVisor (runsc)", "mock": "mock (no sandbox)"}
+
+
+def sandbox_info(run_result: dict, timeout: int, network: bool = True) -> dict:
+    """attempt.sandbox for the frontend (HANDOFF section 7.1). Never raises."""
+    tel = job_telemetry(run_result.get("job_id")) or {}
+    oci = tel.get("oci_runtime")
+    return {
+        "runtime": _RUNTIME_NAMES.get(oci, oci),
+        "network": "egress allow-list" if network else "none",
+        "timeout_s": timeout,
+        "container_removed": (tel.get("cleanup") or {}).get("container_removed"),
+    }

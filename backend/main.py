@@ -21,6 +21,7 @@ import scrapers
 app = FastAPI(title="Self-healing scraper")
 
 JOBS: dict[str, dict] = {}
+RUN_TIMEOUT_S = 30
 _lock = threading.Lock()
 
 
@@ -103,16 +104,21 @@ def _run_job(job_id: str, url: str, saved_code: str | None = None) -> None:
 
         for n in range(1, config.MAX_ATTEMPTS + 1):
             attempt = {"n": n, "source": source, "code": code, "stdout": "", "stderr": "",
-                       "exit_code": None, "verdict": "running", "reason": "running in sandbox"}
+                       "exit_code": None, "verdict": "running", "reason": "running in sandbox",
+                       "timed_out": None, "duration_ms": None, "runtime_job_id": None,
+                       "sandbox": None}
             job["attempts"].append(attempt)
 
             if retarget_error:  # can't safely point it at the new URL: don't run it
                 ok, verdict, reason, items = False, "fail", retarget_error, []
                 retarget_error = None
             else:
-                res = sandbox_client.run(code, timeout=30)
+                res = sandbox_client.run(code, timeout=RUN_TIMEOUT_S)
                 attempt.update(stdout=res.get("stdout", ""), stderr=res.get("stderr", ""),
-                               exit_code=res.get("exit_code"))
+                               exit_code=res.get("exit_code"), timed_out=res.get("timed_out"),
+                               duration_ms=res.get("duration_ms"),
+                               runtime_job_id=res.get("job_id"),
+                               sandbox=sandbox_client.sandbox_info(res, RUN_TIMEOUT_S))
                 attempt["reason"] = "checking output"
                 ok, verdict, reason, items = _check_attempt(job, res)
             if ok and source == "saved":
