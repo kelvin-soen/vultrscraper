@@ -1,6 +1,10 @@
-# Sift (siftform.): self-healing, verified, contained scraper agent
+# siftform.
 
-Give Sift a URL. It writes a scraper with AI, runs it in a disposable gVisor sandbox,
+**Live demo:** http://70.34.217.56:8000
+
+A self-healing, verified, contained scraper agent.
+
+Give siftform. a URL. It writes a scraper with AI, runs it in a disposable gVisor sandbox,
 checks every extracted price against the page, and repairs the scraper itself when the
 site changes. Every attempt, check and security event is shown in the UI.
 
@@ -129,7 +133,7 @@ Frontend development and tests: [frontend/README.md](frontend/README.md)
 ## Known limits
 
 - **JavaScript-rendered sites** (e.g. large retailers that build product lists in the
-  browser, or have bot checks) can't be scraped with requests + BeautifulSoup. Sift
+  browser, or have bot checks) can't be scraped with requests + BeautifulSoup. siftform.
   detects this after the first empty result and stops with a clear message, instead of
   spending AI calls on repairs that can't work.
 - One saved scraper per site: the key is the URL without its query string, so `/shop`
