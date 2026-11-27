@@ -108,12 +108,25 @@ def _blocked_to_events(blocked: list[dict]) -> list[dict]:
     return events
 
 
+def _injection_events(html: str) -> list[dict]:
+    """Hidden instruction-like page text -> prompt_injection "detected" events.
+    Detection only: the HTML is always passed to the model as untrusted data anyway."""
+    events = []
+    for f in verify.injection_findings(html):
+        phrases = ", ".join(f'"{p[:60]}"' for p in f["phrases"])
+        events.append({"kind": "prompt_injection", "status": "detected",
+                       "detail": f"hidden page text with instruction-like phrases {phrases}: "
+                                 f"\"{f['snippet']}\""})
+    return events
+
+
 def _run_job(job_id: str, url: str, saved_code: str | None = None) -> None:
     """Run the scrape loop. With `saved_code`, attempt 1 reuses it (no code-model call)."""
     job = JOBS[job_id]
     try:
         shot = sandbox_client.screenshot(url)
         job["security"]["events"].extend(_blocked_to_events(shot.get("blocked_requests") or []))
+        job["security"]["events"].extend(_injection_events(shot.get("html") or ""))
         if shot.get("error") and not shot.get("html"):
             raise sandbox_client.SandboxError(f"could not load page: {str(shot['error'])[:300]}")
         job["screenshot_base64"] = shot.get("image_base64")
@@ -207,6 +220,12 @@ def rerun_job(job_id: str, body: JobIn):
     if not saved:
         raise HTTPException(409, "no saved scraper for this site yet; run a normal job first")
     return {"id": _start_job(body.url, saved_code=saved, parent=job_id)}
+
+
+@app.post("/api/scrapers/reset")
+def reset_scrapers():
+    """Forget all saved scrapers (start the demo clean)."""
+    return {"cleared": scrapers.reset()}
 
 
 @app.get("/api/scrapers")

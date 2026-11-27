@@ -2,6 +2,7 @@
 import json
 import re
 import threading
+from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
 _SAVED: dict[str, str] = {}
@@ -24,6 +25,20 @@ def save(url: str, code: str) -> None:
 def get(url: str) -> str | None:
     with _lock:
         return _SAVED.get(site_key(url))
+
+
+# Saved scrapers live in memory only. reset() also removes this file in case
+# persistence is added later; today it never exists.
+DATA_FILE = Path(__file__).resolve().parent / "data" / "scrapers.json"
+
+
+def reset() -> int:
+    """Clear all saved scrapers. Returns how many were cleared."""
+    with _lock:
+        n = len(_SAVED)
+        _SAVED.clear()
+    DATA_FILE.unlink(missing_ok=True)
+    return n
 
 
 def all_keys() -> list[str]:
