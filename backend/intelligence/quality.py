@@ -42,7 +42,7 @@ def locate(visible: str, name: str, price: int, window: int = 160) -> dict:
     i = lo.find(_norm(name).lower())
     if i < 0:
         return {"name_found": False, "price_near_name": False, "excerpt": None}
-    start = max(0, i - 20)
+    start = i  # excerpt starts at the product name
     seg = visible[start:i + len(name) + window]
     near = any(abs(price - c) <= verify.PRICE_TOLERANCE for c in verify.price_candidates(seg[i - start:]))
     return {"name_found": True, "price_near_name": near, "excerpt": seg.strip()[:240]}

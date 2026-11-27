@@ -57,9 +57,9 @@ export const ANOMALY_FIXTURE = {
  "intelligence": {
   "version": 1,
   "status": "done",
-  "started_at": "2026-11-27T13:15:40Z",
-  "finished_at": "2026-11-27T13:15:40Z",
-  "duration_ms": 7,
+  "started_at": "2026-11-27T13:34:13Z",
+  "finished_at": "2026-11-27T13:34:13Z",
+  "duration_ms": 8,
   "quality": {
    "checks": [
     {
@@ -217,12 +217,12 @@ export const ANOMALY_FIXTURE = {
     "signals": [
      "6.8× the top of the typical driver range (2 000 kr–9 500 kr, reference prior)",
      "8.7× the median of 1 other driver listing on this page (7 495 kr)",
-     "was 6 495 kr at 2026-11-27 13:15 UTC (10.00× change); exactly 10× suggests a digit or decimal shift"
+     "was 6 495 kr at 2026-11-27 13:34 UTC (10.00× change); exactly 10× suggests a digit or decimal shift"
     ],
     "previous_price": 6495,
     "on_page": true,
     "next_to_name": true,
-    "excerpt": "rand Category Price Stealth 2 Driver TaylorMade Driver 64 950 kr Paradym Ai Smoke Driver Callaway Driver 7 495 kr G430 Max Fairway Wood Ping Fairway Wood 4 295 kr TSR2 Hybrid Titleist Hybrid 3 495"
+    "excerpt": "Stealth 2 Driver TaylorMade Driver 64 950 kr Paradym Ai Smoke Driver Callaway Driver 7 495 kr G430 Max Fairway Wood Ping Fairway Wood 4 295 kr TSR2 Hybrid Titleist Hybrid 3 495"
    },
    {
     "index": 1,
@@ -234,7 +234,7 @@ export const ANOMALY_FIXTURE = {
     "previous_price": 7495,
     "on_page": true,
     "next_to_name": true,
-    "excerpt": "de Driver 64 950 kr Paradym Ai Smoke Driver Callaway Driver 7 495 kr G430 Max Fairway Wood Ping Fairway Wood 4 295 kr TSR2 Hybrid Titleist Hybrid 3 495 kr P790 Iron Set (5-PW) TaylorMade Iron Set 11 995"
+    "excerpt": "Paradym Ai Smoke Driver Callaway Driver 7 495 kr G430 Max Fairway Wood Ping Fairway Wood 4 295 kr TSR2 Hybrid Titleist Hybrid 3 495 kr P790 Iron Set (5-PW) TaylorMade Iron Set 11 995"
    },
    {
     "index": 2,
@@ -246,7 +246,7 @@ export const ANOMALY_FIXTURE = {
     "previous_price": 4295,
     "on_page": true,
     "next_to_name": true,
-    "excerpt": "way Driver 7 495 kr G430 Max Fairway Wood Ping Fairway Wood 4 295 kr TSR2 Hybrid Titleist Hybrid 3 495 kr P790 Iron Set (5-PW) TaylorMade Iron Set 11 995 kr Apex Pro Iron Set (4-PW) Callaway Iron Set 1"
+    "excerpt": "G430 Max Fairway Wood Ping Fairway Wood 4 295 kr TSR2 Hybrid Titleist Hybrid 3 495 kr P790 Iron Set (5-PW) TaylorMade Iron Set 11 995 kr Apex Pro Iron Set (4-PW) Callaway Iron Set 1"
    },
    {
     "index": 3,
@@ -258,7 +258,7 @@ export const ANOMALY_FIXTURE = {
     "previous_price": 3495,
     "on_page": true,
     "next_to_name": true,
-    "excerpt": "irway Wood 4 295 kr TSR2 Hybrid Titleist Hybrid 3 495 kr P790 Iron Set (5-PW) TaylorMade Iron Set 11 995 kr Apex Pro Iron Set (4-PW) Callaway Iron Set 10 995 kr Vokey SM10 Wedge Titleist Wedg"
+    "excerpt": "TSR2 Hybrid Titleist Hybrid 3 495 kr P790 Iron Set (5-PW) TaylorMade Iron Set 11 995 kr Apex Pro Iron Set (4-PW) Callaway Iron Set 10 995 kr Vokey SM10 Wedge Titleist Wedg"
    },
    {
     "index": 4,
@@ -270,7 +270,7 @@ export const ANOMALY_FIXTURE = {
     "previous_price": 11995,
     "on_page": true,
     "next_to_name": true,
-    "excerpt": "ist Hybrid 3 495 kr P790 Iron Set (5-PW) TaylorMade Iron Set 11 995 kr Apex Pro Iron Set (4-PW) Callaway Iron Set 10 995 kr Vokey SM10 Wedge Titleist Wedge 2 195 kr RTX 6 ZipCore Wedge Cleveland Wedge"
+    "excerpt": "P790 Iron Set (5-PW) TaylorMade Iron Set 11 995 kr Apex Pro Iron Set (4-PW) Callaway Iron Set 10 995 kr Vokey SM10 Wedge Titleist Wedge 2 195 kr RTX 6 ZipCore Wedge Cleveland Wedge"
    },
    {
     "index": 5,
@@ -282,7 +282,7 @@ export const ANOMALY_FIXTURE = {
     "previous_price": 10995,
     "on_page": true,
     "next_to_name": true,
-    "excerpt": "Iron Set 11 995 kr Apex Pro Iron Set (4-PW) Callaway Iron Set 10 995 kr Vokey SM10 Wedge Titleist Wedge 2 195 kr RTX 6 ZipCore Wedge Cleveland Wedge 2 095 kr Phantom 5.5 Putter Scotty Cameron Putter 5 99"
+    "excerpt": "Apex Pro Iron Set (4-PW) Callaway Iron Set 10 995 kr Vokey SM10 Wedge Titleist Wedge 2 195 kr RTX 6 ZipCore Wedge Cleveland Wedge 2 095 kr Phantom 5.5 Putter Scotty Cameron Putter 5 99"
    },
    {
     "index": 6,
@@ -294,7 +294,7 @@ export const ANOMALY_FIXTURE = {
     "previous_price": 2195,
     "on_page": true,
     "next_to_name": true,
-    "excerpt": "Iron Set 10 995 kr Vokey SM10 Wedge Titleist Wedge 2 195 kr RTX 6 ZipCore Wedge Cleveland Wedge 2 095 kr Phantom 5.5 Putter Scotty Cameron Putter 5 995 kr Spider Tour X Putter TaylorMade Putter 4"
+    "excerpt": "Vokey SM10 Wedge Titleist Wedge 2 195 kr RTX 6 ZipCore Wedge Cleveland Wedge 2 095 kr Phantom 5.5 Putter Scotty Cameron Putter 5 995 kr Spider Tour X Putter TaylorMade Putter 4"
    },
    {
     "index": 7,
@@ -306,7 +306,7 @@ export const ANOMALY_FIXTURE = {
     "previous_price": 2095,
     "on_page": true,
     "next_to_name": true,
-    "excerpt": "eist Wedge 2 195 kr RTX 6 ZipCore Wedge Cleveland Wedge 2 095 kr Phantom 5.5 Putter Scotty Cameron Putter 5 995 kr Spider Tour X Putter TaylorMade Putter 4 495 kr Circle T Tour Rat Putter Scotty Came"
+    "excerpt": "RTX 6 ZipCore Wedge Cleveland Wedge 2 095 kr Phantom 5.5 Putter Scotty Cameron Putter 5 995 kr Spider Tour X Putter TaylorMade Putter 4 495 kr Circle T Tour Rat Putter Scotty Came"
    },
    {
     "index": 8,
@@ -318,7 +318,7 @@ export const ANOMALY_FIXTURE = {
     "previous_price": 5995,
     "on_page": true,
     "next_to_name": true,
-    "excerpt": "land Wedge 2 095 kr Phantom 5.5 Putter Scotty Cameron Putter 5 995 kr Spider Tour X Putter TaylorMade Putter 4 495 kr Circle T Tour Rat Putter Scotty Cameron Putter 52 000 kr"
+    "excerpt": "Phantom 5.5 Putter Scotty Cameron Putter 5 995 kr Spider Tour X Putter TaylorMade Putter 4 495 kr Circle T Tour Rat Putter Scotty Cameron Putter 52 000 kr"
    },
    {
     "index": 9,
@@ -330,7 +330,7 @@ export const ANOMALY_FIXTURE = {
     "previous_price": 4495,
     "on_page": true,
     "next_to_name": true,
-    "excerpt": "ron Putter 5 995 kr Spider Tour X Putter TaylorMade Putter 4 495 kr Circle T Tour Rat Putter Scotty Cameron Putter 52 000 kr"
+    "excerpt": "Spider Tour X Putter TaylorMade Putter 4 495 kr Circle T Tour Rat Putter Scotty Cameron Putter 52 000 kr"
    },
    {
     "index": 10,
@@ -345,7 +345,7 @@ export const ANOMALY_FIXTURE = {
     "previous_price": null,
     "on_page": true,
     "next_to_name": true,
-    "excerpt": "ade Putter 4 495 kr Circle T Tour Rat Putter Scotty Cameron Putter 52 000 kr"
+    "excerpt": "Circle T Tour Rat Putter Scotty Cameron Putter 52 000 kr"
    }
   ],
   "findings": [
@@ -375,7 +375,7 @@ export const ANOMALY_FIXTURE = {
      {
       "id": "history_jump",
       "weight": 2,
-      "detail": "was 6 495 kr at 2026-11-27 13:15 UTC (10.00× change); exactly 10× suggests a digit or decimal shift",
+      "detail": "was 6 495 kr at 2026-11-27 13:34 UTC (10.00× change); exactly 10× suggests a digit or decimal shift",
       "ratio": 10.0,
       "shift": 10
      }
@@ -391,26 +391,26 @@ export const ANOMALY_FIXTURE = {
       "kind": "page",
       "label": "Listing page text",
       "url": "http://70.34.217.56:8080/shop?v=anomaly",
-      "excerpt": "rand Category Price Stealth 2 Driver TaylorMade Driver 64 950 kr Paradym Ai Smoke Driver Callaway Driver 7 495 kr G430 Max Fairway Wood Ping Fairway Wood 4 295 kr TSR2 Hybrid Titleist Hybrid 3 495",
+      "excerpt": "Stealth 2 Driver TaylorMade Driver 64 950 kr Paradym Ai Smoke Driver Callaway Driver 7 495 kr G430 Max Fairway Wood Ping Fairway Wood 4 295 kr TSR2 Hybrid Titleist Hybrid 3 495",
       "fact": "The listing shows Stealth 2 Driver at 64 950 kr"
      },
      {
       "id": "E2",
       "kind": "statistics",
       "label": "Dataset & category statistics",
-      "fact": "2 driver listings on this page, median 36 222 kr; typical driver range 2 000 kr–9 500 kr (reference prior, category from name keyword); dataset median 5 995 kr over 11 records",
+      "fact": "1 other unflagged driver listing on this page, median 7 495 kr; typical driver range 2 000 kr–9 500 kr (reference prior, category from name keyword); dataset median 5 995 kr over 11 records",
       "signals": [
        "6.8× the top of the typical driver range (2 000 kr–9 500 kr, reference prior)",
        "8.7× the median of 1 other driver listing on this page (7 495 kr)",
-       "was 6 495 kr at 2026-11-27 13:15 UTC (10.00× change); exactly 10× suggests a digit or decimal shift"
+       "was 6 495 kr at 2026-11-27 13:34 UTC (10.00× change); exactly 10× suggests a digit or decimal shift"
       ]
      },
      {
       "id": "E3",
       "kind": "history",
       "label": "Previous observation",
-      "fact": "Last verified run (2026-11-27 13:15 UTC, job mockjob1) recorded 6 495 kr",
-      "at": "2026-11-27T13:15:40Z",
+      "fact": "Last verified run (2026-11-27 13:34 UTC, job mockjob1) recorded 6 495 kr",
+      "at": "2026-11-27T13:34:13Z",
       "job_id": "mockjob1"
      },
      {
@@ -418,8 +418,8 @@ export const ANOMALY_FIXTURE = {
       "kind": "research",
       "label": "Product page (contained fetch)",
       "url": "http://70.34.217.56:8080/shop/product/1?v=anomaly",
-      "fetched_at": "2026-11-27T13:15:40Z",
-      "duration_ms": 3,
+      "fetched_at": "2026-11-27T13:34:13Z",
+      "duration_ms": 4,
       "prices_found": [
        6495
       ],
@@ -442,7 +442,7 @@ export const ANOMALY_FIXTURE = {
     "model": null,
     "note": "AI reasoning not enabled for this run; rule-based assessment",
     "status": "open",
-    "duration_ms": 4
+    "duration_ms": 5
    },
    {
     "id": "F11",
@@ -479,14 +479,14 @@ export const ANOMALY_FIXTURE = {
       "kind": "page",
       "label": "Listing page text",
       "url": "http://70.34.217.56:8080/shop?v=anomaly",
-      "excerpt": "ade Putter 4 495 kr Circle T Tour Rat Putter Scotty Cameron Putter 52 000 kr",
+      "excerpt": "Circle T Tour Rat Putter Scotty Cameron Putter 52 000 kr",
       "fact": "The listing shows Circle T Tour Rat Putter at 52 000 kr"
      },
      {
       "id": "E2",
       "kind": "statistics",
       "label": "Dataset & category statistics",
-      "fact": "3 putter listings on this page, median 5 995 kr; typical putter range 900 kr–8 000 kr (reference prior, category from name keyword); dataset median 5 995 kr over 11 records",
+      "fact": "2 other unflagged putter listings on this page, median 5 245 kr; typical putter range 900 kr–8 000 kr (reference prior, category from name keyword); dataset median 5 995 kr over 11 records",
       "signals": [
        "6.5× the top of the typical putter range (900 kr–8 000 kr, reference prior)",
        "9.9× the median of 2 other putter listings on this page (5 245 kr)"
@@ -497,7 +497,7 @@ export const ANOMALY_FIXTURE = {
       "kind": "research",
       "label": "Product page (contained fetch)",
       "url": "http://70.34.217.56:8080/shop/product/11?v=anomaly",
-      "fetched_at": "2026-11-27T13:15:40Z",
+      "fetched_at": "2026-11-27T13:34:13Z",
       "duration_ms": 2,
       "prices_found": [
        52000
@@ -526,13 +526,13 @@ export const ANOMALY_FIXTURE = {
   "uninvestigated": [],
   "scraper": {
    "version": 1,
-   "code_sha256": "295b5536e664f50cbd181d59f0ede2ce5f08dd07351ad7a6f5804971ce89b5c1",
+   "code_sha256": "5ecceebaa5bdaf23c49e28fe8ba955a2c927cf4e6a733c7f6803fa28c9ccc0d1",
    "source": "generated",
    "parent": null,
    "status": "active",
-   "created_at": "2026-11-27T13:15:40Z",
+   "created_at": "2026-11-27T13:34:13Z",
    "created_by_job": "mockjob1",
-   "last_verified_at": "2026-11-27T13:15:40Z",
+   "last_verified_at": "2026-11-27T13:34:13Z",
    "last_job_id": "mockjob2",
    "runs": 2,
    "verdict": "pass",
@@ -601,12 +601,12 @@ export const ANOMALY_FIXTURE = {
    "runs": [
     {
      "job_id": "mockjob1",
-     "at": "2026-11-27T13:15:40Z",
+     "at": "2026-11-27T13:34:13Z",
      "records": 10
     },
     {
      "job_id": "mockjob2",
-     "at": "2026-11-27T13:15:40Z",
+     "at": "2026-11-27T13:34:13Z",
      "records": 11
     }
    ],
@@ -641,8 +641,8 @@ export const ANOMALY_FIXTURE = {
         {
          "id": "range",
          "label": "Price range",
-         "value": "2 095–64 950 kr",
-         "caption": "includes 2 flagged"
+         "value": "2 095–64 950",
+         "caption": "kr · includes 2 flagged"
         },
         {
          "id": "verification",
@@ -901,7 +901,7 @@ export const ANOMALY_FIXTURE = {
        "type": "chart",
        "kind": "price_change",
        "title": "Change since the last run",
-       "subtitle": "Each product's price now vs the last verified run (13:15 UTC).",
+       "subtitle": "Each product's price now vs the last verified run (13:34 UTC).",
        "rows": [
         {
          "i": 0,

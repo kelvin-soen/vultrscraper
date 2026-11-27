@@ -12,6 +12,7 @@ sandbox runtime, exactly like freshly generated code.
 """
 import hashlib
 import math
+import re
 from urllib.parse import urlsplit, urlunsplit
 
 from .history import now_iso, product_key
@@ -26,8 +27,15 @@ def site_key(url: str) -> str:
     return urlunsplit((p.scheme, p.netloc, p.path, "", ""))
 
 
+_URL_LINE = re.compile(r"^URL\s*=\s*.*$", re.MULTILINE)
+
+
 def _sha(code: str) -> str:
-    return hashlib.sha256(code.encode("utf-8")).hexdigest()
+    """Identity of a scraper. The `URL = ...` line is normalised because the backend
+    retargets a saved scraper at each run's URL (scrapers.set_url); that is reuse, not
+    a new version."""
+    norm = _URL_LINE.sub("URL = <target>", code.strip(), count=1)
+    return hashlib.sha256(norm.encode("utf-8")).hexdigest()
 
 
 def infer_schema(items: list[dict]) -> dict:

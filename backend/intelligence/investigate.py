@@ -113,10 +113,13 @@ def gather(rec: dict, analysis: dict, job_url: str, html: str, fetch, budget: Bu
                    "fact": f"The listing shows {rec['name']} at {_fmt(rec['price_sek'])}"
                            + ("" if loc.get("price_near_name") else " (price not directly next to the name)")})
     cat = rec["category"]
-    cs = next((c for c in analysis["stats"]["categories"] if c["key"] == cat["key"]), None)
+    peers = sorted(r["price_sek"] for r in analysis["records"]
+                   if r is not rec and not r["flagged"] and r["category"]["key"] == cat["key"])
     parts = []
-    if cs and cs["count"] > 1:
-        parts.append(f"{cs['count']} {cat['label'].lower()} listings on this page, median {_fmt(cs['median'])}")
+    if peers and cat["key"] != "uncategorised":
+        med = peers[len(peers) // 2] if len(peers) % 2 else (peers[len(peers) // 2 - 1] + peers[len(peers) // 2]) / 2
+        parts.append(f"{len(peers)} other unflagged {cat['label'].lower()} listing{'s' if len(peers) != 1 else ''} "
+                     f"on this page, median {_fmt(med)}")
     if cat["band"]:
         parts.append(f"typical {cat['label'].lower()} range {_fmt(cat['band'][0])}–{_fmt(cat['band'][1])} "
                      f"(reference prior, category from {cat['source']})")

@@ -161,6 +161,8 @@ class Investigation(unittest.TestCase):
         self.assertFalse(f["value_changed"])
         research = [e for e in f["evidence"] if e["kind"] == "research"][0]
         self.assertIn(6495, research["prices_found"])
+        stats = [e for e in f["evidence"] if e["kind"] == "statistics"][0]
+        self.assertIn("1 other unflagged driver listing on this page, median 7 495 kr", stats["fact"])
 
     def test_rules_fallback_is_inconclusive_for_consistent_expensive_item(self):
         f = self.run_one(10, None)
@@ -222,6 +224,13 @@ class Registry(unittest.TestCase):
         self.assertEqual([v["status"] for v in vs], ["superseded", "active"])
         self.assertEqual(vs[1]["schema"]["items"]["price_sek"], {"type": "integer", "required": True, "minimum": 1})
         self.assertEqual(vs[1]["criteria"]["required_fields"], ["name", "price_sek"])
+
+    def test_retargeted_url_is_reuse_not_a_new_version(self):
+        code = 'import requests\nURL = "http://shop.test/shop"\nprint(1)'
+        registry.record_verified(self.url, code, self.items, "j1", "generated", "pass")
+        again = registry.record_verified(self.url, code.replace('/shop"', '/shop?v=anomaly"'), self.items, "j2",
+                                         "saved", "pass")
+        self.assertEqual((again["version"], again["reused"]), (1, True))
 
     def test_drift(self):
         registry.record_verified(self.url, "code", self.items, "j1", "generated", "pass")
