@@ -123,14 +123,134 @@ Open `http://<vm>:8000/`. The runtime key is read from `SANDBOX_API_KEY` or
 Frontend development and tests: [frontend/README.md](frontend/README.md)
 (`node --test tests/*.test.mjs`, `?mock=heal` fixtures).
 
-**Backend API**
+The API is described under [Platform API](#platform-api).
 
-| Endpoint | Purpose |
-|---|---|
-| `POST /api/jobs {"url"}` | Start a job, returns `{"id"}` |
-| `GET /api/jobs/{id}` | Status, attempts (code, output, verdict, reason, sandbox telemetry), results, screenshot, security events |
-| `POST /api/jobs/{id}/rerun {"url"}` | Run the saved scraper (repair if broken), returns a new job id |
-| `GET /api/scrapers`, `POST /api/scrapers/reset` | List or clear saved scrapers |
+## Platform API
+
+Any app or AI agent can send a URL to siftform. and get verified, structured data back,
+without opening the web page.
+
+**Example use case:** a golf retailer runs a script every morning that sends its
+competitors' product pages to siftform. It reuses the saved scraper for each site,
+repairs it if the site changed, and returns verified prices for the retailer's
+dashboard or price alerts.
+
+### Endpoints
+
+Base URL: `http://70.34.217.56:8000`. Request and response bodies are JSON.
+
+**Start a job:** `POST /api/jobs` with `{"url": "..."}` returns `{"id": "..."}`.
+If a scraper is already saved for the site, it is tried first and repaired if it fails.
+```bash
+curl -s -X POST http://70.34.217.56:8000/api/jobs \
+  -H "Content-Type: application/json" \
+  -d '{"url": "http://70.34.217.56:8080/shop"}'
+# {"id":"199e2731e2ab"}
+```
+
+**Get a job:** `GET /api/jobs/{id}` returns the status, every attempt, the results and
+the security events.
+```bash
+curl -s http://70.34.217.56:8000/api/jobs/199e2731e2ab
+```
+Shortened example response (a real `/shop` job):
+```json
+{
+  "status": "done",
+  "url": "http://70.34.217.56:8080/shop",
+  "title": "Golf Clubs | Bogey & Birdie Golf",
+  "mode": "new",
+  "scrape_mode": "html",
+  "error": null,
+  "created_at": "2026-11-27T15:10:43Z",
+  "finished_at": "2026-11-27T15:10:52Z",
+  "results": [
+    {"name": "Stealth 2 Driver", "price_sek": 6495},
+    {"name": "Paradym Ai Smoke Driver", "price_sek": 7495}
+  ],
+  "attempts": [{
+    "n": 1,
+    "source": "generated",
+    "verdict": "pass",
+    "reason": "10 items; evidence check: all 10 prices appear in the page text; vision check agrees: 10/10 visible prices matched [qwen3.8-flash-next]",
+    "exit_code": 0,
+    "timed_out": false,
+    "duration_ms": 2216,
+    "sandbox": {"runtime": "gVisor (runsc)", "network": "egress allow-list", "timeout_s": 30, "container_removed": true},
+    "code_model": "glm-5.3-flash"
+  }],
+  "models": {"code": "glm-5.3-flash", "vision": "qwen3.8-flash-next"},
+  "code_model_calls": 1,
+  "vision_calls": 1,
+  "security": {"events": [
+    {"kind": "timeout", "status": "passed", "source": "benchmark",
+     "detail": "Runtime security benchmark, 2026-11-27 15:00:38 UTC: Infinite loop test passed (runtime-wide test, not observed in this job)."}
+  ]}
+}
+```
+Shortened: the full response also has every result, each attempt's `code`, `stdout`
+and `stderr`, `screenshot_base64`, `final_code`, all security events and an
+`intelligence` block (data quality and scraper history). `status` is `running`,
+`done` or `failed`; a failed job has a readable `error`. Each attempt's `verdict` is
+`pass`, `fail` or `unverified`.
+
+**Run again:** `POST /api/jobs/{id}/rerun` with `{"url": "..."}` returns a new job id.
+It runs the saved scraper (no AI call if it still works) and repairs it if the site changed.
+```bash
+curl -s -X POST http://70.34.217.56:8000/api/jobs/199e2731e2ab/rerun \
+  -H "Content-Type: application/json" \
+  -d '{"url": "http://70.34.217.56:8080/shop"}'
+# {"id":"15b298ef110f"}
+```
+
+**Health:** `GET /api/health`
+```bash
+curl -s http://70.34.217.56:8000/api/health
+# {"ok":true,"mock_sandbox":false}
+```
+
+Also: `GET /api/scrapers` lists saved scrapers, and `POST /api/scrapers/reset` clears them.
+
+### Polling example
+
+Start a job, then poll `GET /api/jobs/{id}` every 2 s until `status` is `done` or
+`failed` (Python, standard library only):
+```python
+import json, time, urllib.request
+
+API = "http://70.34.217.56:8000"
+
+def call(method, path, body=None):
+    req = urllib.request.Request(API + path, method=method,
+                                 data=json.dumps(body).encode() if body else None,
+                                 headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        return json.load(r)
+
+job_id = call("POST", "/api/jobs", {"url": "http://70.34.217.56:8080/shop"})["id"]
+while True:
+    job = call("GET", f"/api/jobs/{job_id}")
+    if job["status"] in ("done", "failed"):
+        break
+    time.sleep(2)
+
+if job["status"] == "done":
+    for item in job["results"]:
+        print(item["name"], item["price_sek"])
+else:
+    print("failed:", job["error"])
+```
+
+### Limits
+
+- One job takes about 10–60 s, at most 180 s (then it fails with "time limit reached").
+- Jobs are kept in memory, so a server restart clears them.
+- No authentication yet. Next step: API keys and rate limits.
+
+### Next step: MCP server
+
+An MCP server, so AI agents can call siftform. as a tool: "get verified prices from
+this URL" returns structured data directly in the agent's conversation.
 
 ## Known limits
 
