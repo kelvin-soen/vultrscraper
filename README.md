@@ -247,10 +247,12 @@ else:
 - Jobs are kept in memory, so a server restart clears them.
 - No authentication yet. Next step: API keys and rate limits.
 
-### Next step: MCP server
+### MCP server
 
-An MCP server, so AI agents can call siftform. as a tool: "get verified prices from
-this URL" returns structured data directly in the agent's conversation.
+Available: AI agents can call siftform. as a tool (`extract_data(url)`, `get_job(job_id)`)
+and get verified, structured data back in the conversation. Add it to Claude Code with
+`claude mcp add --transport stdio --env SIFTFORM_URL=http://70.34.217.56:8000 siftform -- /root/app/mcp/.venv/bin/python /root/app/mcp/server.py`
+(after installing it). Install steps, Claude Desktop setup and an example: [mcp/README.md](mcp/README.md).
 
 ## Known limits
 
@@ -264,6 +266,8 @@ this URL" returns structured data directly in the agent's conversation.
 - One saved scraper per site: the key is the URL without its query string, so `/shop`
   and `/shop?v=2` share one.
 - Jobs and saved scrapers are kept in memory.
+- Prices are labelled `price_sek` but taken as shown on the page: non-SEK sites keep
+  their own currency (e.g. £51.77 on books.toscrape.com becomes `51`).
 - Prompt-injection detection sees inline-hidden and off-screen text, not text hidden by
   CSS classes. It reports and doesn't block; containment doesn't rely on it.
 - The evidence check is lenient on purpose. It catches prices that aren't on the page,
