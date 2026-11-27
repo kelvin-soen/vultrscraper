@@ -1,10 +1,29 @@
 /** Schema-driven, sortable data table. All cells are plain text. */
 
-import { h, icon, replace } from "../dom.js";
+import { h, icon, replace, copyText } from "../dom.js";
+import { toast } from "./menu.js";
 import { cellValue, formatCell, sortRows } from "../model/schema.js";
 import { safeHref } from "../url.js";
 
-export function dataTable(rows, columns, { caption, filterable = rows.length > 8, rowMarker = null, markerLabel = "Status" } = {}) {
+/** Raw value for the clipboard: numbers stay plain numbers (6495, not "6 495 kr"). */
+function clipValue(v) {
+  if (v === null || v === undefined) return "";
+  return typeof v === "object" ? JSON.stringify(v) : String(v);
+}
+
+function copyCell(v, label) {
+  const b = h("button", { class: "cell-copy", type: "button", "aria-label": `Copy ${label}`, title: "Copy value" }, icon("copy", { size: 12 }));
+  b.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    const ok = await copyText(clipValue(v));
+    b.classList.toggle("is-done", ok);
+    toast(ok ? `Copied ${clipValue(v).length > 40 ? "value" : `“${clipValue(v)}”`}` : "Couldn’t copy", { tone: ok ? "ok" : "error", ms: 1600 });
+    setTimeout(() => b.classList.remove("is-done"), 1400);
+  });
+  return b;
+}
+
+export function dataTable(rows, columns, { caption, filterable = rows.length > 3, rowMarker = null, markerLabel = "Status" } = {}) {
   let sortCol = null;
   let sortDir = "asc";
   let query = "";
@@ -50,27 +69,37 @@ export function dataTable(rows, columns, { caption, filterable = rows.length > 8
                 return h(
                   "td",
                   { class: `align-${c.align}${c.type === "money" || c.type === "number" ? " t-num" : ""}` },
-                  href ? h("a", { href, target: "_blank", rel: "noopener noreferrer nofollow", text }) : text
+                  h(
+                    "span",
+                    { class: "cell" },
+                    href ? h("a", { class: "cell__text", href, target: "_blank", rel: "noopener noreferrer nofollow", text }) : h("span", { class: "cell__text", text }),
+                    v !== null && v !== undefined && v !== "" ? copyCell(v, `${c.label}: ${text}`) : null
+                  )
                 );
               })
             )
           )
-        : h("tr", null, h("td", { colspan: String(columns.length + (rowMarker ? 1 : 0)), class: "table__none c-3", text: "No records match your filter." }))
+        : h("tr", null, h("td", { colspan: String(columns.length + (rowMarker ? 1 : 0)), class: "table__none c-3", text: `No records match “${query.trim()}”.` }))
     );
     count.textContent = q ? `${sorted.length} of ${rows.length}` : `${rows.length} record${rows.length === 1 ? "" : "s"}`;
   }
 
   const filter = filterable
-    ? h("input", {
-        class: "input input--sm table__filter",
-        type: "search",
-        placeholder: "Filter",
-        "aria-label": "Filter records",
-        onInput: (e) => {
-          query = e.target.value;
-          render();
-        },
-      })
+    ? h(
+        "label",
+        { class: "table__search" },
+        icon("search", { size: 14 }),
+        h("input", {
+          class: "input input--sm table__filter",
+          type: "search",
+          placeholder: "Search records",
+          "aria-label": "Search records",
+          onInput: (e) => {
+            query = e.target.value;
+            render();
+          },
+        })
+      )
     : null;
 
   render();

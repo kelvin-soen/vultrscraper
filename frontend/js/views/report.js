@@ -13,7 +13,12 @@ import { displayUrl, hostOf, safeHref } from "../url.js";
 import { formatDuration, formatTime, pluralize } from "../model/format.js";
 import { fallbackViews, VIEW_IDS } from "../model/intel.js";
 import { renderBlock } from "../dashboard/registry.js";
-import { button, mark } from "../components/ui.js";
+import { mark } from "../components/ui.js";
+import { favicon } from "../components/menu.js";
+import { reportActions } from "../components/report-actions.js";
+import { compareRecords, previousSnapshot } from "../model/history.js";
+import { reportTimes } from "../model/export.js";
+import { relativeTime } from "../model/format.js";
 
 const TAB_HINT = {
   overview: "Results at a glance",
@@ -21,10 +26,12 @@ const TAB_HINT = {
   agent: "Scraper, attempts, sandbox",
 };
 
-export function reportView(job, { onNew, onRerun, observedMs }) {
+export function reportView(job, { onRerun, observedMs, observed = {}, fromSnapshot = false, isMock = false }) {
   const openSet = new Set();
   const intel = job.intel;
   const views = intel.status === "done" ? intel.views : fallbackViews(job);
+  const comparison = intel.status === "done" && intel.history ? null : localComparison(job, observed);
+  if (comparison) addComparison(views, comparison);
   const host = (hostOf(job.url) || job.url).replace(/^www\./, "");
   const href = safeHref(job.url);
   const o = job.outcome;
@@ -34,12 +41,17 @@ export function reportView(job, { onNew, onRerun, observedMs }) {
   const ctx = { job, intel, openSet, verdict: job.finalAttempt?.verdict, jump };
 
   /* ---- header ---------------------------------------------------------- */
-  const metaBits = [pluralize(job.attempts.length, "attempt")];
+  const times = reportTimes(job, observed);
+  const metaBits = [pluralize(job.results.length, "record"), pluralize(job.attempts.length, "attempt")];
+  if (job.attempts[0]?.source === "saved") metaBits.push("saved scraper");
   const duration = job.durationMs ?? observedMs ?? null;
   if (duration != null) metaBits.push(formatDuration(duration));
-  if (job.finishedAt) metaBits.push(formatTime(job.finishedAt));
+  const when = times.finished
+    ? h("time", { class: "report__when", datetime: times.finished.toISOString(), title: `${formatTime(times.finished)}${times.source === "browser" ? " (as observed in this browser)" : ""}`, text: relativeTime(times.finished) })
+    : null;
 
-  const rerunMsg = h("p", { class: "report__notice t-small c-2", role: "status", "aria-live": "polite", hidden: true });
+  const actions = reportActions(job, { onRerun, observed, isMock, fromSnapshot, onBeforePrint: () => renderAllForPrint() });
+  const rerunMsg = actions.notice;
   const status = h(
     "div",
     { class: "report__status" },
@@ -60,45 +72,26 @@ export function reportView(job, { onNew, onRerun, observedMs }) {
       h(
         "div",
         { class: "report__identity" },
-        h("span", { class: "monogram", "aria-hidden": "true", text: /^[a-z]/i.test(host) ? host[0].toUpperCase() : "" }),
+        favicon(job.url, { size: 40, name: job.title }),
         h(
           "div",
           { class: "report__identity-text" },
-          h("p", { class: "t-eyebrow", text: "Intelligence report" }),
+          h("p", { class: "t-eyebrow", text: fromSnapshot ? "Saved report" : "Report" }),
           h("h1", { id: "report-title", class: "report__title", text: job.title || host }),
           h(
             "p",
             { class: "report__byline" },
             href ? h("a", { class: "report__source t-mono", href, target: "_blank", rel: "noopener noreferrer nofollow" }, h("span", { class: "truncate", text: displayUrl(job.url) }), icon("external", { size: 12 })) : h("span", { class: "t-mono", text: job.url }),
-            h("span", { class: "report__meta t-num", text: metaBits.join("  ·  ") })
+            h("span", { class: "report__meta t-num" }, metaBits.join("  ·  "), when ? "  ·  " : null, when)
           )
         )
       ),
-      h(
-        "div",
-        { class: "report__actions" },
-        button("Run again", {
-          variant: "secondary",
-          size: "sm",
-          iconName: "refresh",
-          onClick: async (e) => {
-            const btn = e.currentTarget;
-            btn.disabled = true;
-            rerunMsg.hidden = true;
-            try {
-              await onRerun();
-            } catch (err) {
-              rerunMsg.hidden = false;
-              rerunMsg.textContent = err?.message || "Couldn’t start a new run.";
-            } finally {
-              btn.disabled = false;
-            }
-          },
-        }),
-        button("New extraction", { variant: "primary", size: "sm", iconName: "arrowLeft", onClick: onNew })
-      )
+      actions.el
     ),
     status,
+    fromSnapshot
+      ? h("p", { class: "report__saved t-small c-2" }, icon("clock", { size: 14 }), h("span", { text: `Saved copy from ${job.saved?.at ? formatTime(job.saved.at) : "this browser"}. The server no longer has this run (jobs live in server memory); the screenshot is not kept in saved copies.` }))
+      : null,
     rerunMsg
   );
 
@@ -122,7 +115,7 @@ export function reportView(job, { onNew, onRerun, observedMs }) {
         if (el) rendered.push(el);
       }
       if (!rendered.length) rendered.push(h("p", { class: "t-small c-3", text: "Nothing to show here for this run." }));
-      panel.append(...rendered);
+      panel.append(h("h2", { class: "dview__print-title", text: v.label }), ...rendered);
     };
     panels.push(panel);
   });
@@ -171,7 +164,51 @@ export function reportView(job, { onNew, onRerun, observedMs }) {
   const initial = VIEW_IDS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "overview";
   select(initial, { push: false });
 
-  return { el: view };
+  /* Print / PDF: every view, in order, with its own heading (CSS @media print). */
+  function renderAllForPrint() {
+    panels.forEach((p) => p._render());
+    view.classList.add("is-printing");
+  }
+  const onBefore = () => renderAllForPrint();
+  const onAfter = () => view.classList.remove("is-printing");
+  window.addEventListener("beforeprint", onBefore);
+  window.addEventListener("afterprint", onAfter);
+
+  return {
+    el: view,
+    destroy() {
+      window.removeEventListener("beforeprint", onBefore);
+      window.removeEventListener("afterprint", onAfter);
+    },
+  };
+}
+
+/* ---- comparison with this browser's previous saved run on the same site ---- */
+
+function localComparison(job, observed) {
+  if (!job.results.length) return null;
+  const prev = previousSnapshot({ ...job, finishedAtMs: observed.finishedAt || (job.finishedAt ? job.finishedAt.getTime() : null) });
+  if (!prev) return null;
+  const cmp = compareRecords(job.results, prev.snap.results);
+  if (!cmp) return null;
+  return { ...cmp, at: prev.entry.finishedAt ? new Date(prev.entry.finishedAt) : null, prevId: prev.entry.id };
+}
+
+function addComparison(views, cmp) {
+  const when = cmp.at ? formatTime(cmp.at) : "an earlier run";
+  const data = views.find((v) => v.id === "data");
+  const overview = views.find((v) => v.id === "overview");
+  if (data && cmp.rows.length) {
+    data.blocks.push({ type: "history", title: `Compared with your run on ${when}`, rows: cmp.rows });
+  }
+  const parts = [];
+  parts.push(cmp.changed.length ? `${pluralize(cmp.changed.length, "value")} changed` : "No values changed");
+  if (cmp.added.length) parts.push(`${cmp.added.length} new`);
+  if (cmp.removed.length) parts.push(`${cmp.removed.length} gone`);
+  const text = `${parts.join(", ")} since your run on ${when} (saved in this browser).`;
+  const f = overview?.blocks.find((b) => b.type === "findings");
+  if (f) f.items = [...(f.items || []), { kind: "change", text }];
+  else overview?.blocks.splice(1, 0, { type: "findings", title: "Key findings", items: [{ kind: "change", text }] });
 }
 
 function jump(e, id) {

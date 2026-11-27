@@ -82,3 +82,18 @@ export function formatTime(date) {
     minute: "2-digit",
   }).format(date);
 }
+
+/** "just now", "4 min ago", "yesterday 14:02", "3 Nov 2026" — precise time goes in a title. */
+export function relativeTime(date, now = new Date()) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
+  const s = Math.round((now - date) / 1000);
+  if (s < 45) return "just now";
+  if (s < 3600) return `${Math.max(1, Math.round(s / 60))} min ago`;
+  const hm = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit" }).format(date);
+  const day = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.round((day(now) - day(date)) / 86400000);
+  if (days === 0) return `today ${hm}`;
+  if (days === 1) return `yesterday ${hm}`;
+  if (days < 7) return `${new Intl.DateTimeFormat("en-GB", { weekday: "short" }).format(date)} ${hm}`;
+  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: days > 300 ? "numeric" : undefined }).format(date);
+}

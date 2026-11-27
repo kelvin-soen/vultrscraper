@@ -20,6 +20,7 @@
  */
 
 import { normalizeIntel } from "./intel.js";
+import { liveStage } from "./live.js";
 
 export const STAGE_DEFS = {
   access: {
@@ -67,7 +68,7 @@ export const STAGE_DEFS = {
 const VERIFIED_WORDS = /^(ok|pass|passed|match|matched|matches|verified|valid|correct|true|yes|success|good)$/i;
 const REJECTED_WORDS =
   /^(fail|failed|mismatch|mismatched|wrong|invalid|incorrect|false|no|rejected|error|empty|bad|crash|timeout)$/i;
-const PENDING_WORDS = /^(pending|unknown|unverified|skipped|n\/a|none|)$/i;
+const PENDING_WORDS = /^(pending|running|unknown|unverified|skipped|n\/a|none|)$/i;
 
 /* ------------------------------------------------------------------ */
 /* primitives                                                          */
@@ -218,6 +219,8 @@ export function normalizeAttempt(raw, index) {
     failure,
     sandbox,
     model: str(r.model) || null,
+    source: str(r.source) || null, // generated | saved | repaired (backend main)
+    scrapeMode: str(r.scrape_mode) || null,
     succeeded: ran && !failure && verdict === "verified",
   };
 }
@@ -282,7 +285,11 @@ export function deriveStages(job) {
   else stages.push(stage("capture", first ? "skipped" : "pending", first ? "No screenshot was returned." : ""));
 
   // Generate — attempt 1 code.
-  stages.push(stage("generate", first && first.code ? "done" : "pending", first?.model ? `Model: ${first.model}` : ""));
+  if (first && first.source === "saved") {
+    stages.push(stage("generate", "done", "No AI call: the scraper verified on an earlier run was reused.", { label: "Reusing saved scraper" }));
+  } else {
+    stages.push(stage("generate", first && first.code ? "done" : "pending", first?.model ? `Model: ${first.model}` : job.models?.code ? `Model: ${job.models.code}` : ""));
+  }
 
   // Execute / extract / verify — first attempt. Repairs are shown in their own stage.
   if (first && first.ran) {
@@ -706,10 +713,15 @@ export function normalizeJob(raw, { id = null, url = "" } = {}) {
     hasBackendSteps: Array.isArray(r.steps) && r.steps.length > 0,
     phase: str(r.phase) || null,
     intel: normalizeIntel(r.intelligence),
+    finalCode: str(r.final_code) || null,
+    scrapeMode: str(r.scrape_mode) || null,
+    hadScreenshot: !!r.screenshot_base64 || r._had_screenshot === true,
+    saved: isObj(r._saved) ? { at: toDate(r._saved.at), reason: str(r._saved.reason) } : null,
     codeModelCalls: numOrNull(r.code_model_calls),
     visionCalls: numOrNull(r.vision_calls),
   };
 
+  job.live = liveStage(r);
   job.stages = job.hasBackendSteps ? stagesFromBackend(r.steps, job) : deriveStages(job);
   job.repairs = deriveRepairs(job);
   job.outcome = deriveOutcome(job);
