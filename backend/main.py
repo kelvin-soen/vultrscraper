@@ -83,11 +83,30 @@ def _check_attempt(job: dict, res: dict) -> tuple[bool, str, str, list[dict]]:
     return False, "fail", f"vision check disagrees: {why}", items
 
 
+MAX_SECURITY_EVENTS = 50
+
+
+def _blocked_to_events(blocked: list[dict]) -> list[dict]:
+    """/screenshot blocked_requests -> security.events (HANDOFF section 7.2).
+    These are requests the page itself tried to make (e.g. exfiltration from a hostile
+    page) that the runtime's egress proxy refused. URL/reason are untrusted page data."""
+    events = []
+    for b in blocked[:MAX_SECURITY_EVENTS]:
+        reason = str(b.get("reason") or "blocked")[:100]
+        target = str(b.get("url") or "?")[:200]
+        events.append({"kind": "ssrf", "status": "blocked",
+                       "detail": f"page request blocked by egress proxy ({reason}): {target}"})
+    return events
+
+
 def _run_job(job_id: str, url: str, saved_code: str | None = None) -> None:
     """Run the scrape loop. With `saved_code`, attempt 1 reuses it (no code-model call)."""
     job = JOBS[job_id]
     try:
         shot = sandbox_client.screenshot(url)
+        job["security"]["events"].extend(_blocked_to_events(shot.get("blocked_requests") or []))
+        if shot.get("error") and not shot.get("html"):
+            raise sandbox_client.SandboxError(f"could not load page: {str(shot['error'])[:300]}")
         job["screenshot_base64"] = shot.get("image_base64")
         html = shot.get("html") or ""
 
@@ -155,6 +174,7 @@ def _start_job(url: str, saved_code: str | None = None, parent: str | None = Non
             "status": "running", "url": url, "mode": "rerun" if saved_code else "new",
             "parent": parent, "attempts": [], "results": [], "screenshot_base64": None,
             "error": None, "final_code": None, "code_model_calls": 0, "vision_calls": 0,
+            "security": {"events": []},
         }
     threading.Thread(target=_run_job, args=(job_id, url, saved_code), daemon=True).start()
     return job_id

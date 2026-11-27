@@ -130,7 +130,14 @@ def _mock_screenshot(url: str) -> dict:
     v2 = "v=2" in url
     path = _MOCK_PNG_V2_PATH if v2 else _MOCK_PNG_PATH
     img = base64.b64encode(path.read_bytes()).decode()
-    return {"image_base64": img, "html": _MOCK_HTML_V2 if v2 else _MOCK_HTML, "status": 200}
+    blocked = []
+    if "v=evil" in url:  # hostile page: its exfiltration attempts get blocked by the proxy
+        blocked = [
+            {"url": "http://169.254.169.254/latest/meta-data/iam/", "reason": "blocked-metadata"},
+            {"url": "http://10.0.0.5:6379/?leak=ignore-previous-instructions", "reason": "blocked-private"},
+        ]
+    return {"image_base64": img, "html": _MOCK_HTML_V2 if v2 else _MOCK_HTML, "status": 200,
+            "blocked_requests": blocked}
 
 
 # ---------- real ----------
