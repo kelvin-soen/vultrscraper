@@ -154,3 +154,20 @@ MOCK_SANDBOX=1 .venv/bin/uvicorn main:app --port 8000
 Without `VULTR_INFERENCE_KEY` the job fails at “Generating scraper”, and the
 UI shows the backend’s error at that stage. This was used to verify the
 integration end to end.
+
+## Polish pass (2026-11-27): additional fields read, and how
+
+All additive; every one is optional and degrades gracefully.
+
+| Field (backend `main`) | Used for |
+| --- | --- |
+| `attempts[].verdict == "running"` + `attempts[].reason` = `generating scraper` / `repairing scraper` / `running in sandbox` / `checking output` | Live loader stage and text (`js/model/live.js`). `"running"` is treated as pending, never as a verdict. An unknown reason is shown verbatim. |
+| `attempts[].source` = `generated` / `saved` / `repaired` | "Running the saved scraper — no AI call", "Reusing saved scraper" stage, history badge |
+| `scrape_mode` / `attempts[].scrape_mode` = `html` / `rendered` | Loader text ("…for the browser-rendered page"), scraper download header |
+| `models.code`, `models.vision` | Loader text, JSON export metadata |
+| `final_code` | "Python scraper" download (labelled verified); falls back to the last attempt's code, labelled **unverified** |
+| `phase == "analyzing"` (intelligence branch) | "Checking plausibility" loader stage |
+| `created_at`, `finished_at` (intelligence branch) | Report timestamps. Without them the UI uses times observed by this browser and says so |
+
+Not used on purpose: `runtime_job_id`, `security.benchmark.tests`, raw `stdout`/`stderr` in exports,
+`GET /api/scrapers` (it lists every user's saved sites, so the UI never shows it).

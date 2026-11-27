@@ -87,7 +87,7 @@ test("pollJob stops on done, backs off on failures, stops on 404", async () => {
 });
 
 test("every mock scenario ends in a consistent terminal state", () => {
-  const expected = { success: "verified", heal: "repaired", "heal-fail": "repair_failed", timeout: "repaired", evil: "verified", unverified: "unverified", extended: "verified", offline: "verified" };
+  const expected = { success: "verified", heal: "repaired", "heal-fail": "repair_failed", timeout: "repaired", evil: "verified", unverified: "unverified", extended: "verified", offline: "verified", anomaly: "verified" };
   for (const [name, sc] of Object.entries(SCENARIOS)) {
     if (sc.createError) continue;
     const raw = snapshot(sc, "http://demo.test/shop", 1e9);

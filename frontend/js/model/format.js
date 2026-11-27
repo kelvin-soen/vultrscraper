@@ -2,9 +2,10 @@
 
 export function formatDuration(ms) {
   if (ms == null || !Number.isFinite(ms)) return "—";
-  if (ms < 1000) return `${Math.round(ms)} ms`;
+  // no-break spaces: "9.1 s" must never wrap between number and unit
+  if (ms < 1000) return `${Math.round(ms)}\u00a0ms`;
   const s = ms / 1000;
-  if (s < 60) return `${s < 10 ? s.toFixed(1) : Math.round(s)} s`;
+  if (s < 60) return `${s < 10 ? s.toFixed(1) : Math.round(s)}\u00a0s`;
   const m = Math.floor(s / 60);
   const rem = Math.round(s % 60);
   return `${m}m ${String(rem).padStart(2, "0")}s`;
@@ -37,7 +38,9 @@ export function formatMoney(n, currency) {
   const code = (currency || "").toUpperCase();
   const frac = Number.isInteger(n) ? 0 : 2;
   if (code === "SEK" || code === "NOK" || code === "DKK") {
-    return `${nf(`kr${frac}`, { minimumFractionDigits: frac, maximumFractionDigits: frac }).format(n)} kr`;
+    // Nordic grouping with a (narrow) no-break space: 64 950 kr, matching the backend's text.
+    const t = nf(`kr${frac}`, { minimumFractionDigits: frac, maximumFractionDigits: frac }).format(n);
+    return `${t.replace(/,/g, "\u202f").replace(/\./g, ",")} kr`;
   }
   if (code) {
     try {
@@ -79,4 +82,19 @@ export function formatTime(date) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
+}
+
+/** "just now", "4 min ago", "yesterday 14:02", "3 Nov 2026" — precise time goes in a title. */
+export function relativeTime(date, now = new Date()) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
+  const s = Math.round((now - date) / 1000);
+  if (s < 45) return "just now";
+  if (s < 3600) return `${Math.max(1, Math.round(s / 60))} min ago`;
+  const hm = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit" }).format(date);
+  const day = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.round((day(now) - day(date)) / 86400000);
+  if (days === 0) return `today ${hm}`;
+  if (days === 1) return `yesterday ${hm}`;
+  if (days < 7) return `${new Intl.DateTimeFormat("en-GB", { weekday: "short" }).format(date)} ${hm}`;
+  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: days > 300 ? "numeric" : undefined }).format(date);
 }

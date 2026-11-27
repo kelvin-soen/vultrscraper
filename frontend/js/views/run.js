@@ -13,6 +13,7 @@ import { inferColumns, primaryColumn, formatCell, cellValue } from "../model/sch
 import { stageList } from "../components/stages.js";
 import { attemptCard, button, mark, skeleton } from "../components/ui.js";
 import { screenshotFrame, lightbox } from "../components/evidence.js";
+import { cubeLoader } from "../components/cube.js";
 
 export function runView({ url, startedAt = Date.now(), onViewReport, onRetry, onNew }) {
   const openSet = new Set();
@@ -22,7 +23,12 @@ export function runView({ url, startedAt = Date.now(), onViewReport, onRetry, on
   let titleEl = null;
   let urlEl = null;
 
+  const cube = cubeLoader({ label: "Starting" });
+  let settled = null; // Promise once the cube has landed on a terminal state
+  const settledCbs = [];
   const statusText = h("span", { class: "run__status-text", text: "Starting" });
+  const stageLabel = h("p", { class: "run__stage", "aria-live": "polite", text: "Starting the run" });
+  const stageDetail = h("p", { class: "run__stage-detail c-3", text: "Contacting the backend" });
   const clock = h("span", { class: "run__clock t-num", text: "00:00", "aria-label": "Elapsed time" });
   const conn = h("div", { class: "conn", role: "status", "aria-live": "polite", hidden: true });
 
@@ -43,10 +49,16 @@ export function runView({ url, startedAt = Date.now(), onViewReport, onRetry, on
       { class: "run__head" },
       h(
         "div",
-        { class: "run__heading" },
-        h("p", { class: "run__status" }, h("span", { class: "pulse", "aria-hidden": "true" }), statusText, h("span", { class: "run__sep", "aria-hidden": "true", text: "·" }), clock),
-        h("h1", { id: "run-title", class: "t-title run__title truncate", text: hostOf(url) || url || "Loading run…", ref: (el) => (titleEl = el) }),
-        h("p", { class: "run__url t-mono c-3 truncate", text: displayUrl(url), ref: (el) => (urlEl = el) })
+        { class: "run__hero" },
+        h("div", { class: "run__cube" }, cube.el),
+        h(
+          "div",
+          { class: "run__heading" },
+          h("p", { class: "run__status" }, statusText, h("span", { class: "run__sep", "aria-hidden": "true", text: "·" }), clock),
+          stageLabel,
+          stageDetail,
+          h("p", { class: "run__target" }, h("span", { class: "run__title truncate", id: "run-title", text: hostOf(url) || url || "Loading run…", ref: (el) => (titleEl = el) }), h("span", { class: "run__url t-mono c-3 truncate", text: displayUrl(url), ref: (el) => (urlEl = el) }))
+        )
       ),
       conn
     ),
@@ -88,13 +100,28 @@ export function runView({ url, startedAt = Date.now(), onViewReport, onRetry, on
       titleEl.textContent = hostOf(job.url) || job.url;
       urlEl.textContent = displayUrl(job.url);
     }
+    // The page <title> (backend reads it right after the screenshot) beats a bare host.
+    if (job.title && titleEl.textContent !== job.title) titleEl.textContent = job.title;
     current = job;
     const running = job.status === "running";
     view.classList.toggle("is-running", running);
     view.classList.toggle("is-finished", !running);
 
-    const active = job.stages.find((s) => s.status === "active");
-    statusText.textContent = running ? (active ? active.label : "Working") : job.outcome.label;
+    const live = job.live;
+    statusText.textContent = running ? (live.attempt ? `Attempt ${live.attempt}` : "Running") : job.outcome.label;
+    if (stageLabel.textContent !== live.label) {
+      stageLabel.textContent = live.label;
+      stageLabel.classList.remove("is-new");
+      void stageLabel.offsetWidth;
+      stageLabel.classList.add("is-new");
+    }
+    stageDetail.textContent = live.detail;
+    cube.setLabel(`${live.label}. ${live.detail}`);
+    if (running) cube.setMode(live.mode);
+    else if (!settled) {
+      settled = cube.settle({ failed: job.status !== "done" });
+      settled.then(() => settledCbs.splice(0).forEach((cb) => cb()));
+    }
 
     if (!running && timer) {
       clearInterval(timer);
@@ -159,7 +186,15 @@ export function runView({ url, startedAt = Date.now(), onViewReport, onRetry, on
       conn.hidden = false;
       replace(conn, h("span", { class: "conn__dot", "aria-hidden": "true" }), h("span", { text: failures >= 3 ? `Connection lost — retrying in ${Math.round(retryInMs / 1000)} s` : "Reconnecting…" }));
     },
+    /** Called once the cube has landed after done/failed (immediately if already). */
+    onSettled(cb) {
+      if (settled) settled.then(cb);
+      else settledCbs.push(cb);
+    },
     setFatal(message) {
+      if (!settled) settled = cube.settle({ failed: true });
+      stageLabel.textContent = "Run unavailable";
+      stageDetail.textContent = message;
       if (timer) clearInterval(timer);
       timer = null;
       view.classList.remove("is-running");
@@ -184,6 +219,7 @@ export function runView({ url, startedAt = Date.now(), onViewReport, onRetry, on
     },
     destroy() {
       if (timer) clearInterval(timer);
+      cube.destroy();
     },
   };
 }

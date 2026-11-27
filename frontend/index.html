@@ -9,12 +9,13 @@
     <meta name="description" content="Paste a URL. An agent writes, runs, verifies and repairs a scraper for it." />
     <meta name="referrer" content="no-referrer" />
     <!--
-      Strict CSP: only same-origin scripts/styles, images from self or data: (screenshots),
-      and API calls to the same origin. No inline scripts, no third-party requests.
+      Strict CSP: only same-origin scripts/styles and API calls. Images: self, data:
+      (screenshots) and http(s) for the scraped site's own /favicon.ico (loaded with
+      no referrer; no favicon service). No inline scripts.
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: http: https:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
     />
     <title>siftform. — Structured data from any website</title>
     <link rel="icon" href="icon.svg" type="image/svg+xml" />
@@ -22,6 +23,8 @@
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/components.css" />
     <link rel="stylesheet" href="css/views.css" />
+    <link rel="stylesheet" href="css/dashboard.css" />
+    <link rel="stylesheet" href="css/polish.css" />
     <script type="module" src="js/app.js"></script>
   </head>
   <body data-view="home">

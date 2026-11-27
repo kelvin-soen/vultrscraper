@@ -17,9 +17,14 @@ One continuous page with three states:
    once captured, a findings preview from scraper output, and attempt cards
    with expandable code, stdout and stderr. Repairs appear as a nested
    self-healing progression.
-3. **Report**: identity, source, verdict, computed stats, then numbered
-   sections: data (sortable, filterable, schema-driven), evidence viewer,
-   self-healing and history, methodology, containment, scraper code.
+3. **Intelligence dashboard**: three views. *Overview* (KPIs, key findings,
+   anomaly investigations, auto-selected charts, two-lane data quality),
+   *Data & Evidence* (table with review flags, screenshot evidence, history)
+   and *Agent & Infrastructure* (scraper registry, run facts, and expandable
+   attempts, methodology, code and containment). The content is a declarative
+   spec from the backend's intelligence layer, validated against a whitelist
+   (`js/model/intel.js`) and rendered only by predefined components
+   (`js/dashboard/`). See `../INTEGRATION_HANDOFF.md`. Mock: `/?mock=anomaly`.
 
 ## Structure
 
@@ -34,7 +39,13 @@ js/api/               HTTP adapter, polling, adapter selection
 js/model/             pure logic: job interpretation, schema inference, formatting
 js/components/        UI building blocks (no fetch, no global state)
 js/views/             the three states
-dev/                  DEVELOPMENT ONLY: mock adapter + fixtures (?mock=)
+js/dashboard/         spec block registry + SVG charts (predefined components only)
+js/components/cube.js live 3D loader: the logo as a rolling die, driven by js/model/live.js
+js/model/export.js    Markdown / CSV / JSON / e-mail / scraper exports (field whitelist)
+js/model/history.js   recent runs + saved report copies (this browser only)
+dev/                  DEVELOPMENT ONLY: mock adapter + fixtures (?mock=), proxy.py
+                      (frontend against a live backend), cube.html (loader lab),
+                      e2e-live.mjs (end-to-end check against a real backend)
 tests/                node:test suites for model, schema, url, client, fixtures
 ```
 

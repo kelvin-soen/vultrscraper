@@ -1,0 +1,5 @@
+.lab { max-width: 60rem; margin: 0 auto; padding: 2rem; display: grid; gap: 1.5rem; }
+.lab__row { display: flex; gap: 3rem; align-items: center; flex-wrap: wrap; }
+.lab__stage { width: 22rem; height: 22rem; }
+.lab__ref svg { width: 16rem; height: 16rem; margin-top: 1.5rem; }
+.lab__controls { display: flex; gap: .5rem; flex-wrap: wrap; }

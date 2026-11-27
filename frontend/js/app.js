@@ -16,6 +16,7 @@ import { homeView } from "./views/home.js";
 import { runView } from "./views/run.js";
 import { reportView } from "./views/report.js";
 import { BRAND, REPORT_HANDOFF_MS } from "./config.js";
+import { getEntry, loadSnapshot, recordRun, saveSnapshot } from "./model/history.js";
 
 const root = document.getElementById("main");
 const topbar = document.getElementById("topbar");
@@ -30,6 +31,8 @@ const state = {
   url: "",
   startedAt: 0,
   finishedAt: 0,
+  raw: null,
+  fromSnapshot: false,
 };
 
 /* ---- routing ----------------------------------------------------------- */
@@ -94,7 +97,7 @@ function goHome({ push = true, url = "", error = "" } = {}) {
   state.job = null;
   state.jobId = null;
   if (push) setUrl({});
-  const view = homeView({ onSubmit: submit, initialUrl: url, initialError: error });
+  const view = homeView({ onSubmit: submit, initialUrl: url, initialError: error, onOpen: (entry) => openEntry(entry), onRunAgain: (entry) => runAgain(entry) });
   mount("home", view).then(() => view.focus());
   document.title = `${BRAND.name} — ${BRAND.tagline}`;
 }
@@ -109,9 +112,15 @@ function startRun(id, url, { push = true, resumed = false } = {}) {
   state.jobId = id;
   state.url = url;
   state.job = null;
-  state.startedAt = Date.now();
-  state.finishedAt = 0;
+  state.raw = null;
+  state.fromSnapshot = false;
+  const known = getEntry(id);
+  // Times are only ever what this browser saw; a resumed run keeps its original start.
+  state.startedAt = known?.startedAt || Date.now();
+  state.finishedAt = known?.finishedAt || 0;
   if (push) setUrl({ job: id });
+  // Mock runs (?mock=) never enter the real history.
+  if (!state.adapter.isMock && (!resumed || !known)) recordRun(id, { url: url || undefined, startedAt: state.startedAt, status: "running" });
 
   const view = runView({
     url,
@@ -129,6 +138,8 @@ function startRun(id, url, { push = true, resumed = false } = {}) {
       const job = normalizeJob(raw, { id, url: state.url });
       if (!state.url && job.url) state.url = job.url;
       state.job = job;
+      state.raw = raw;
+      track(id, job, raw);
       // A reload of an already-finished job goes straight to the report.
       if (first && resumed && job.status === "done") {
         first = false;
@@ -141,25 +152,85 @@ function startRun(id, url, { push = true, resumed = false } = {}) {
         state.finishedAt = Date.now();
         document.title = `${job.outcome.label} · ${job.url} — ${BRAND.name}`;
         if (job.status === "done") {
-          state.handoff = setTimeout(() => {
-            if (state.view?.api === view) showReport();
-          }, REPORT_HANDOFF_MS);
+          // Hand off only after the cube has landed in the logo pose.
+          view.onSettled(() => {
+            state.handoff = setTimeout(() => {
+              if (state.view?.api === view) showReport();
+            }, REPORT_HANDOFF_MS);
+          });
         }
       }
     },
     onConnection: (c) => view.setConnection(c),
-    onFatal: () => view.setFatal("The backend no longer knows this job. Jobs are kept in memory, so a server restart clears them."),
+    onFatal: () => {
+      // Persistent report URLs: the backend forgets jobs on restart, so fall back to
+      // the copy saved in this browser (clearly labelled as such).
+      const snap = loadSnapshot(id);
+      if (snap) {
+        state.raw = snap;
+        state.fromSnapshot = true;
+        state.job = normalizeJob(snap, { id, url: state.url });
+        if (!state.url) state.url = state.job.url;
+        showReport();
+        return;
+      }
+      recordRun(id, { status: "gone" });
+      view.setFatal("The backend no longer has this run, and no copy was saved in this browser. Jobs are kept in server memory, so a restart clears them.");
+    },
   });
+}
+
+/** Keep the local history entry (and the saved copy) in step with the backend. */
+function track(id, job, raw) {
+  if (state.adapter.isMock) return;
+  const prev = getEntry(id);
+  const patch = {
+    url: job.url || undefined,
+    title: job.title || undefined,
+    status: job.status,
+    outcome: job.outcome.kind,
+    outcomeLabel: job.outcome.label,
+    records: job.results.length,
+    reused: job.attempts[0]?.source === "saved",
+    attempts: job.attempts.length,
+    createdAt: job.createdAt ? job.createdAt.getTime() : undefined,
+  };
+  if (job.status !== "running" && !prev?.finishedAt) patch.finishedAt = job.finishedAt ? job.finishedAt.getTime() : Date.now();
+  recordRun(id, patch);
+  if (job.status !== "running" && !prev?.saved) {
+    if (saveSnapshot(id, raw)) recordRun(id, { saved: true });
+  }
+}
+
+/** Open a history entry: live from the backend, or the saved copy if it is gone. */
+function openEntry(entry) {
+  startRun(entry.id, entry.url, { push: true, resumed: true });
+}
+
+async function runAgain(entry) {
+  state.url = entry.url;
+  state.jobId = entry.id;
+  try {
+    await rerun();
+  } catch (err) {
+    goHome({ url: entry.url, error: err?.message || "Couldn’t start a new run." });
+  }
 }
 
 function showReport() {
   if (!state.job) return;
   clearTimeout(state.handoff);
-  const observed = state.finishedAt && !state.job.durationMs ? state.finishedAt - state.startedAt : null;
+  const entry = getEntry(state.jobId) || {};
+  const finished = state.finishedAt || entry.finishedAt || 0;
+  const started = state.startedAt || entry.startedAt || 0;
+  const observed = finished && started && !state.job.durationMs ? finished - started : null;
   const view = reportView(state.job, {
     onNew: () => goHome(),
     onRerun: () => rerun(),
     observedMs: observed,
+    observed: { startedAt: started || null, finishedAt: finished || null },
+    fromSnapshot: state.fromSnapshot,
+    isMock: !!state.adapter?.isMock,
   });
   mount("report", view);
   document.title = `${state.job.title || state.job.url} — ${BRAND.name}`;
@@ -177,7 +248,15 @@ async function retry() {
 
 /** Re-run via POST /api/jobs/{id}/rerun (announced by the backend; may not exist yet). */
 async function rerun() {
-  const { id } = await state.adapter.rerunJob(state.jobId, state.url);
+  let id;
+  try {
+    ({ id } = await state.adapter.rerunJob(state.jobId, state.url));
+  } catch (err) {
+    // The parent job is gone (backend restart) or rerun is unsupported: a new job on
+    // the same URL also starts from the site's saved scraper on this backend.
+    if (err?.status !== 404 && err?.status !== 409 && err?.kind !== "unsupported") throw err;
+    ({ id } = await state.adapter.createJob(state.url));
+  }
   startRun(id, state.url, { push: true });
 }
 
