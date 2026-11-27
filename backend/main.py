@@ -101,8 +101,10 @@ def _check_attempt(job: dict, res: dict, html: str) -> tuple[bool, str, str, lis
         return True, "unverified", f"{head}; no screenshot for vision check", items
     try:
         job["vision_calls"] += 1
-        seen, cropped = ai_client.vision_prices(job["screenshot_base64"])
+        seen, cropped, vmodel = ai_client.vision_prices(job["screenshot_base64"])
+        job["models"]["vision"] = vmodel
         match, why = verify.compare_prices(items, seen, cropped)
+        why = f"{why} [{vmodel}]"
     except Exception as e:
         # Vision unavailable/garbled: evidence check passed, so accept but mark unverified.
         return True, "unverified", f"{head}; vision check error: {str(e)[:200]}", items
@@ -293,7 +295,8 @@ def _start_job(url: str, saved: dict | None = None, parent: str | None = None) -
             "scrape_mode": saved["mode"] if saved else "html",
             "parent": parent, "attempts": [], "results": [], "screenshot_base64": None,
             "error": None, "final_code": None, "code_model_calls": 0, "vision_calls": 0,
-            "js_checked": False, "title": None, "security": {"events": [], "benchmark": None},
+            "js_checked": False, "title": None,
+            "models": {"code": config.CODE_MODEL, "vision": None}, "security": {"events": [], "benchmark": None},
         }
     threading.Thread(target=_run_job, args=(job_id, url, saved), daemon=True).start()
     return job_id

@@ -8,9 +8,14 @@ load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 VULTR_BASE_URL = "https://api.vultrinference.com/v1"
 CODE_MODEL = "glm-5.3"
-# Tested 2026-11-27: nemotron reads image text correctly. clef-omni rejects chat
-# completions ("decision model; use /v1/systemone").
-VISION_MODEL = "nemotron-3-nano-omni-30b-a3b-reasoning"
+# Benchmarked 2026-11-27 on real shop + Clas Ohlson screenshots (12 runs each):
+# qwen3.8-flash-next 12/12 correct in 2-9 s; nemotron with reasoning 9/12, 10-95 s
+# (reasoning runaway); nemotron with reasoning off 10/12 in 1-2 s.
+VISION_MODEL = "qwen3.8-flash-next"
+# Used once if the primary vision model errors, times out or gives no usable answer.
+VISION_FALLBACK_MODEL = "nemotron-3-nano-omni-30b-a3b-reasoning"
+VISION_FALLBACK_EXTRA = {"reasoning": {"enabled": False}}
+VISION_TIMEOUT_S = 60  # per vision call (primary and fallback each)
 CODE_MAX_TOKENS = 16000  # reasoning model: must be >= 4000
 VISION_MAX_TOKENS = 16000
 AI_TIMEOUT_S = 120  # hard limit per AI call (incl. one retry on empty content)

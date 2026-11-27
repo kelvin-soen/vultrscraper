@@ -91,10 +91,11 @@ def strip_fences(text: str) -> str:
 
 
 def _chat(messages: list[dict], model: str = config.CODE_MODEL,
-          max_tokens: int = config.CODE_MAX_TOKENS) -> str:
-    """One AI call with a hard total deadline of AI_TIMEOUT_S (including one retry
-    when a reasoning model returns empty content). Raises AIError."""
-    limit = config.AI_TIMEOUT_S
+          max_tokens: int = config.CODE_MAX_TOKENS, limit: float | None = None,
+          extra_body: dict | None = None) -> str:
+    """One AI call with a hard total deadline of `limit` s (default AI_TIMEOUT_S),
+    including one retry when a reasoning model returns empty content. Raises AIError."""
+    limit = limit or config.AI_TIMEOUT_S
     start = time.monotonic()
     prompt_chars = sum(len(c.get("text", "")) if isinstance(c, dict) else len(str(c))
                        for m in messages for c in
@@ -107,7 +108,8 @@ def _chat(messages: list[dict], model: str = config.CODE_MODEL,
         t0 = time.monotonic()
         try:
             resp = _get_client().with_options(timeout=remaining).chat.completions.create(
-                model=model, messages=messages, max_tokens=max_tokens)
+                model=model, messages=messages, max_tokens=max_tokens,
+                extra_body=extra_body or None)
         except APITimeoutError:
             log.warning("AI %s timed out after %.0fs (prompt %d chars)", model,
                         time.monotonic() - start, prompt_chars)
@@ -115,6 +117,8 @@ def _chat(messages: list[dict], model: str = config.CODE_MODEL,
         except APIError as e:
             log.warning("AI %s error after %.0fs: %s", model, time.monotonic() - t0, type(e).__name__)
             raise AIError(f"{model} API error: {type(e).__name__}: {str(e)[:200]}") from None
+        if resp.model and resp.model != model:  # the API silently reroutes unknown names
+            log.warning("AI asked for %s but %s answered (check the model name)", model, resp.model)
         choice = resp.choices[0]
         finish = choice.finish_reason
         content = choice.message.content or ""  # reasoning model: ignore message.reasoning
@@ -257,21 +261,38 @@ def prepare_vision_image(image_base64: str) -> tuple[str, bool]:
     return base64.b64encode(buf.getvalue()).decode(), cropped
 
 
-def vision_prices(image_base64: str) -> tuple[list[int], bool]:
-    """Ask the vision model which prices it sees. Returns (whole-SEK prices, cropped).
-    The model never sees our extracted data; comparison happens in verify.py."""
-    jpeg_b64, cropped = prepare_vision_image(image_base64)
-    out = _chat(  # _chat retries once on empty content
+def _vision_once(jpeg_b64: str, model: str, extra_body: dict | None) -> list[int]:
+    out = _chat(  # _chat retries once on empty content, within the same time limit
         [{"role": "user", "content": [
             {"type": "text", "text": VISION_PROMPT},
             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{jpeg_b64}"}},
         ]}],
-        model=config.VISION_MODEL,
-        max_tokens=config.VISION_MAX_TOKENS,
+        model=model, max_tokens=config.VISION_MAX_TOKENS,
+        limit=config.VISION_TIMEOUT_S, extra_body=extra_body,
     )
     m = re.search(r"\{.*\}", out, re.DOTALL)
     if not m:
-        raise ValueError(f"vision model did not return JSON: {out[:200]!r}")
-    raw = json.loads(m.group(0)).get("prices") or []
-    prices = [p for p in (verify.to_whole_sek(x) for x in raw) if p is not None]
-    return prices, cropped
+        raise AIError(f"{model} did not return JSON: {out[:120]!r}")
+    try:
+        raw = json.loads(m.group(0)).get("prices") or []
+    except (ValueError, AttributeError):
+        raise AIError(f"{model} returned malformed JSON: {out[:120]!r}") from None
+    return [p for p in (verify.to_whole_sek(x) for x in raw) if p is not None]
+
+
+def vision_prices(image_base64: str) -> tuple[list[int], bool, str]:
+    """Ask the vision model which prices it sees. Returns (whole-SEK prices, cropped,
+    model used). Falls back once to VISION_FALLBACK_MODEL if the primary fails.
+    The model never sees our extracted data; comparison happens in verify.py."""
+    jpeg_b64, cropped = prepare_vision_image(image_base64)
+    try:
+        return _vision_once(jpeg_b64, config.VISION_MODEL, None), cropped, config.VISION_MODEL
+    except AIError as e:
+        log.warning("vision %s failed (%s); falling back to %s", config.VISION_MODEL, e,
+                    config.VISION_FALLBACK_MODEL)
+        first_error = str(e)
+    try:
+        prices = _vision_once(jpeg_b64, config.VISION_FALLBACK_MODEL, config.VISION_FALLBACK_EXTRA)
+    except AIError as e:
+        raise AIError(f"{first_error}; fallback {e}") from None
+    return prices, cropped, f"{config.VISION_FALLBACK_MODEL} (fallback, reasoning off)"
