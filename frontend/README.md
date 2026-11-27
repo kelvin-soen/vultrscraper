@@ -1,0 +1,60 @@
+# Frontend
+
+Static, dependency-free frontend for the self-healing scraper. Served by the
+FastAPI backend from this folder. No build step.
+
+- **Integration contract and backend asks:** [INTEGRATION.md](INTEGRATION.md)
+- **Tests:** `node --test tests/*.test.mjs` (Node 20+, no install)
+- **Dev with fixtures:** `python3 -m http.server 5173`, then open `/?mock=heal`
+
+## Experience
+
+One continuous page with three states:
+
+1. **Input**: a wordmark, a one-line promise and a single URL field.
+   Validation is inline, Enter submits, and quick links fill the demo shop URLs.
+2. **Live run**: a stage timeline derived from real job data, the screenshot
+   once captured, a findings preview from scraper output, and attempt cards
+   with expandable code, stdout and stderr. Repairs appear as a nested
+   self-healing progression.
+3. **Report**: identity, source, verdict, computed stats, then numbered
+   sections: data (sortable, filterable, schema-driven), evidence viewer,
+   self-healing and history, methodology, containment, scraper code.
+
+## Structure
+
+```
+index.html            shell + strict CSP
+css/tokens.css        design tokens (type, space, radii, colour, motion, art hooks)
+css/base.css          reset + typography primitives
+css/components.css    buttons, inputs, marks, panels, code, tables, evidence…
+css/views.css         home / run / report layouts
+js/app.js             state machine + routing (?job=<id>)
+js/api/               HTTP adapter, polling, adapter selection
+js/model/             pure logic: job interpretation, schema inference, formatting
+js/components/        UI building blocks (no fetch, no global state)
+js/views/             the three states
+dev/                  DEVELOPMENT ONLY: mock adapter + fixtures (?mock=)
+tests/                node:test suites for model, schema, url, client, fixtures
+```
+
+Presentation never fetches. API code never touches the DOM. All
+interpretation of backend data lives in `js/model/job.js`.
+
+## Design system
+
+- **Colour:** pure greyscale in light and dark (follows the OS setting). There
+  are no hues. Status is carried by **shape**: filled = done, crossed outline =
+  failed, spinning arc = active, ring = waiting, dashed = not run.
+- **Type:** system grotesk stack (Geist/Inter if installed, otherwise SF/Segoe)
+  and a mono stack. 10-step scale, tight tracking on display sizes, tabular
+  figures for numbers.
+- **Space:** 4 px grid tokens (`--space-*`). **Radii:** 6–22 px plus full pills.
+- **Borders over shadows:** 1 px hairlines. Shadows only on floating elements.
+- **Motion:** 140/240/420 ms with one ease-out curve, and
+  `prefers-reduced-motion` respected.
+- **Future art layer:** every view has an inert `.art-layer` slot and
+  `--art-*` tokens, so generative or dithered visuals can be added later
+  without touching components.
+
+The wordmark (`sift`) is a placeholder and can be changed in `js/config.js`.
