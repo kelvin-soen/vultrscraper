@@ -30,6 +30,24 @@ class JobIn(BaseModel):
     url: str
 
 
+EMPTY_REASON = "scraper returned an empty list (no products found)"
+JS_PAGE_MESSAGE = ("This site loads its products with JavaScript. Sift currently scrapes HTML "
+                   "pages; browser-based scraping is the next step.")
+
+
+def _js_rendered(url: str, html: str) -> str | None:
+    """If the rendered page has prices but the raw HTML (what requests gets) has almost
+    none, return a technical explanation; else None."""
+    rendered = verify.price_count(html)
+    if rendered < 3:
+        return None
+    raw = sandbox_client.probe_raw_prices(url)
+    if raw is None or raw.get("prices", 0) * 5 >= rendered:
+        return None
+    return (f"raw HTML (HTTP {raw.get('status')}, {raw.get('chars', 0):,} chars) has "
+            f"{raw.get('prices')} prices, the browser-rendered page has {rendered}")
+
+
 def parse_items(stdout: str) -> list[dict]:
     """Parse and validate scraper output. Raises ValueError with a readable reason."""
     text = stdout.strip()
@@ -46,7 +64,7 @@ def parse_items(stdout: str) -> list[dict]:
     if not isinstance(data, list):
         raise ValueError(f"expected a JSON array, got {type(data).__name__}")
     if not data:
-        raise ValueError("scraper returned an empty list (no products found)")
+        raise ValueError(EMPTY_REASON)
     items = []
     for i, it in enumerate(data):
         if not isinstance(it, dict):
@@ -214,6 +232,13 @@ def _run_job(job_id: str, url: str, saved_code: str | None = None) -> None:
                 scrapers.save(url, code)
                 job.update(results=items, final_code=code, status="done")
                 return
+            if reason == EMPTY_REASON and not job.get("js_checked"):
+                job["js_checked"] = True
+                why = _js_rendered(url, html)
+                if why:  # no requests-based scraper can work here: stop, don't burn AI calls
+                    attempt["reason"] = f"{JS_PAGE_MESSAGE} ({why})"
+                    job.update(status="failed", error=JS_PAGE_MESSAGE)
+                    return
             prev = {"code": code, "reason": reason,
                     "stderr": attempt["stderr"], "stdout": attempt["stdout"]}
             code = None
@@ -238,7 +263,7 @@ def _start_job(url: str, saved_code: str | None = None, parent: str | None = Non
             "status": "running", "url": url, "mode": "rerun" if saved_code else "new",
             "parent": parent, "attempts": [], "results": [], "screenshot_base64": None,
             "error": None, "final_code": None, "code_model_calls": 0, "vision_calls": 0,
-            "title": None, "security": {"events": [], "benchmark": None},
+            "js_checked": False, "title": None, "security": {"events": [], "benchmark": None},
         }
     threading.Thread(target=_run_job, args=(job_id, url, saved_code), daemon=True).start()
     return job_id

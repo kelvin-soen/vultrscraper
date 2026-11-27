@@ -38,6 +38,17 @@ def page_title(html: str) -> str | None:
     return text[:120] or None
 
 
+# Prices like "39,90", "1 299,00", "79 kr", "69:-", "£51.77", "SEK 120"
+PRICE_RX = re.compile(r"\d+,\d{2}(?!\d)|\d+\s*(?::-|kr\b|kronor|SEK)|[£$€]\s?\d|SEK\s?\d", re.I)
+
+
+def price_count(html: str) -> int:
+    """Price-like strings in the page text (scripts/styles excluded)."""
+    soup = BeautifulSoup(html or "", "html.parser")
+    _drop_non_content(soup)
+    return len(PRICE_RX.findall(soup.get_text(" ")))
+
+
 def visible_text(html: str) -> str:
     """Text a user would see: drops script/style/head and inline-hidden elements."""
     soup = BeautifulSoup(html or "", "html.parser")

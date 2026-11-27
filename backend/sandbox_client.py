@@ -23,6 +23,7 @@ from pathlib import Path
 import httpx
 
 import config
+import verify
 
 # ---------- mock ----------
 MOCK_PRODUCTS = [
@@ -266,3 +267,30 @@ def security_benchmark() -> dict | None:
         value = None
     _bench_cache.update(at=now, value=value)
     return value
+
+
+# ---------- raw-HTML probe (is the page rendered by JavaScript?) ----------
+_PROBE_CODE = """
+import json, re, requests
+from bs4 import BeautifulSoup
+URL = {url}
+r = requests.get(URL, timeout=20)
+soup = BeautifulSoup(r.text, "html.parser")
+for t in soup(["script", "style", "noscript", "template", "head", "svg"]):
+    t.decompose()
+n = len(re.findall({rx}, soup.get_text(" "), re.I))
+print(json.dumps({{"status": r.status_code, "chars": len(r.text), "prices": n}}))
+"""
+
+
+def probe_raw_prices(url: str) -> dict | None:
+    """Fetch `url` with plain requests inside the sandbox (exactly what a scraper sees)
+    and count prices. Returns {"status", "chars", "prices"} or None if the probe failed."""
+    if config.MOCK_SANDBOX:
+        return None
+    code = _PROBE_CODE.format(url=json.dumps(url), rx=repr(verify.PRICE_RX.pattern))
+    try:
+        res = run(code, timeout=30)
+        return json.loads((res.get("stdout") or "").strip().splitlines()[-1])
+    except (SandboxError, ValueError, IndexError):
+        return None

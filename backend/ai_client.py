@@ -101,8 +101,7 @@ def _chat(messages: list[dict], model: str = config.CODE_MODEL,
                   f"(empty content, last finish_reason={finish})")
 
 
-# Prices like "39,90", "1 299,00", "79 kr", "69:-", "£51.77", "SEK 120"
-_PRICE_RX = re.compile(r"\d+,\d{2}(?!\d)|\d+\s*(?::-|kr\b|kronor|SEK)|[£$€]\s?\d|SEK\s?\d", re.I)
+_PRICE_RX = verify.PRICE_RX
 _DROP_TAGS = ["script", "style", "svg", "noscript", "template", "iframe", "header", "nav",
               "footer", "link", "meta"]
 _DROP_ATTRS = {"style", "srcset", "sizes", "onclick", "onload", "onerror", "onmouseover"}
