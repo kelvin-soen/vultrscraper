@@ -41,3 +41,27 @@ for i, p in enumerate(MOCK_PRODUCTS):
 OUT.parent.mkdir(exist_ok=True)
 img.save(OUT, "PNG")
 print(f"wrote {OUT} ({OUT.stat().st_size} bytes)")
+
+# ---------- v2: changed layout (list rows, "69:-" prices, sale banner) ----------
+from sandbox_client import MOCK_PRODUCTS_V2  # noqa: E402
+
+OUT2 = OUT.parent / "shop_v2.png"
+W2, H2 = 1000, 700
+img = Image.new("RGB", (W2, H2), "white")
+d = ImageDraw.Draw(img)
+d.rectangle([0, 0, W2, 64], fill="#0b6e4f")
+d.text((30, 14), "Demo Shop", fill="white", font=ImageFont.truetype(BOLD, 28))
+d.rectangle([0, 64, W2, 110], fill="#ffd166")
+d.text((30, 75), "KAMPANJVECKA  -  nya priser!", fill="#222", font=h2)
+row_h, y = 66, 125
+for i, p in enumerate(MOCK_PRODUCTS_V2):
+    if i % 2 == 0:
+        d.rectangle([20, y, W2 - 20, y + row_h - 6], fill="#f2f7f5")
+    d.text((40, y + 18), f"{i + 1}.", fill="#888", font=body)
+    d.text((80, y + 16), p["name"], fill="#222", font=h2)
+    d.text((W2 - 330, y + 14), f"{p['price_sek']}:-", fill="#0b6e4f", font=price_f)
+    d.rounded_rectangle([W2 - 200, y + 12, W2 - 40, y + 46], radius=6, fill="#0b6e4f")
+    d.text((W2 - 188, y + 19), "Lägg i korgen", fill="white", font=body)
+    y += row_h
+img.save(OUT2, "PNG")
+print(f"wrote {OUT2} ({OUT2.stat().st_size} bytes)")

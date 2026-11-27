@@ -19,7 +19,9 @@ def _get_client() -> OpenAI:
 SYSTEM_PROMPT = """You write Python 3 web scrapers.
 Rules:
 - Use only `requests` and `bs4` (BeautifulSoup) plus the standard library.
-- Fetch the given URL with requests (timeout=20).
+- Define the target URL once, as a module-level constant on its own line, exactly like:
+  URL = "https://example.com/page"
+  Fetch only that constant with requests (timeout=20). Never hardcode the URL elsewhere.
 - Print ONLY a JSON array to stdout: [{"name": str, "price_sek": int}, ...]
 - price_sek is an integer number of Swedish kronor (strip currency text, spaces, decimals).
 - No explanations. Output only the Python code.
