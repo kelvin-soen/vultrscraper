@@ -1,0 +1,25 @@
+[Unit]
+Description=Vultr Agent Runtime (secure sandbox controller)
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/vultr-runtime/runtime.env
+ExecStartPre=/opt/vultr-runtime/deploy/firewall.sh
+WorkingDirectory=/opt/vultr-runtime/controller
+ExecStart=/opt/vultr-runtime/venv/bin/python -m app.main
+Restart=on-failure
+RestartSec=3
+# Hardening of the controller process itself.
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=full
+ReadWritePaths=/var/lib/vultr-runtime /etc/vultr-runtime
+ProtectKernelModules=yes
+ProtectKernelTunables=no
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

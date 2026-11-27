@@ -13,8 +13,6 @@ id_ed25519*
 secrets/
 credentials*.json
 
-# --- Runtime data ---
-runtime/
 *.log
 logs/
 

