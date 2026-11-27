@@ -1,0 +1,40 @@
+{
+  "python_no_network": {
+    "profile": "python",
+    "code": "from vrt_sandbox import read_inputs, write_result\nwrite_result({'sum': sum(read_inputs()['values'])})",
+    "inputs": {"values": [1, 2, 3]},
+    "limits": {"timeout_s": 10}
+  },
+  "python_net_scraper_with_tests": {
+    "profile": "python-net",
+    "code": "import requests\nfrom bs4 import BeautifulSoup\nfrom vrt_sandbox import write_result\nsoup = BeautifulSoup(requests.get('https://example.com', timeout=15).text, 'html.parser')\nwrite_result({'title': soup.title.text})",
+    "test_code": "import json\ndef test_title():\n    assert json.load(open('/work/output/result.json'))['title']",
+    "network": {"allowed_domains": ["example.com"]},
+    "limits": {"timeout_s": 30}
+  },
+  "demo_shop_scraper": {
+    "profile": "python-net",
+    "code": "import requests, json\nprint(requests.get('http://70.34.217.56:8080/shop', timeout=15).status_code)",
+    "network": {"allowed_domains": [], "allow_trusted_targets": true}
+  },
+  "browser_extract_and_screenshot": {
+    "profile": "browser",
+    "browser": {
+      "url": "https://example.com",
+      "actions": [
+        {"type": "wait_for_selector", "selector": "p"},
+        {"type": "extract_text", "selector": "p", "name": "first_paragraph"},
+        {"type": "extract_attribute", "selector": "a", "attr": "href", "all": true, "name": "links"}
+      ],
+      "screenshot": true,
+      "full_page": true
+    },
+    "network": {"allowed_domains": ["example.com"]},
+    "limits": {"timeout_s": 60}
+  },
+  "browser_generated_playwright_code": {
+    "profile": "browser",
+    "code": "from playwright.sync_api import sync_playwright\nfrom vrt_sandbox import launch_chromium, write_result\nwith sync_playwright() as p:\n    b = launch_chromium(p)\n    pg = b.new_page()\n    pg.goto('https://example.com')\n    write_result({'title': pg.title()})\n    b.close()",
+    "network": {"allowed_domains": ["example.com"]}
+  }
+}

@@ -21,16 +21,19 @@ class ProfileLimits:
     tmpfs_tmp_mb: int
     shm_mb: int
     rlimit_as: bool
+    nproc: int = 64            # process limit inside the sandbox (enforced by the gVisor kernel)
     max_output_kb: int = 1024
 
 
 PROFILES = {
     # Generated Python code with no network at all (network_mode=none).
-    "python": ProfileLimits("python", False, 30, 120, 256, 1.0, 64, 64, 64, 64, True),
+    # pids = host-side cgroup backstop (gVisor's own threads count against it);
+    # nproc = per-sandbox process limit seen by generated code.
+    "python": ProfileLimits("python", False, 30, 120, 256, 1.0, 512, 64, 64, 64, True, nproc=64),
     # Python scraping through the SSRF-filtering egress proxy only.
-    "python-net": ProfileLimits("python-net", True, 30, 120, 512, 1.0, 64, 64, 64, 64, True),
+    "python-net": ProfileLimits("python-net", True, 30, 120, 512, 1.0, 512, 64, 64, 64, True, nproc=64),
     # Playwright Chromium through the egress proxy only.
-    "browser": ProfileLimits("browser", True, 60, 180, 1536, 2.0, 512, 128, 256, 512, False),
+    "browser": ProfileLimits("browser", True, 60, 180, 1536, 2.0, 1024, 128, 256, 512, False, nproc=256),
 }
 
 # Browser actions known to the runner. Anything else is rejected before a

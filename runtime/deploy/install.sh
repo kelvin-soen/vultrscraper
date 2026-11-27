@@ -27,6 +27,11 @@ echo "==> configuration in $CONF"
 install -d -m 0700 "$CONF"
 install -d -m 0711 /var/lib/vultr-runtime
 [ -f "$CONF/runtime.env" ] || install -m 0600 "$SRC/deploy/runtime.env.example" "$CONF/runtime.env"
+# Synthetic credential in the controller environment, used only by the
+# secret-hygiene benchmark to prove backend credentials never reach sandboxes.
+grep -q '^VRT_SYNTHETIC_BACKEND_CREDENTIAL=' "$CONF/runtime.env" || \
+  echo "VRT_SYNTHETIC_BACKEND_CREDENTIAL=SYNTHCRED-$(head -c 18 /dev/urandom | od -An -tx1 | tr -d ' \n')" >> "$CONF/runtime.env"
+install -d -m 0755 /var/lib/vultr-runtime/bench-fixtures
 cd "$DEST/controller"
 set -a; . "$CONF/runtime.env"; set +a
 if [ ! -f "$CONF/backend.key" ]; then

@@ -1,0 +1,119 @@
+{
+  "finished_at": 1795777611.4936476,
+  "results": [
+    {
+      "case": "python: structured output + passing validation tests",
+      "passed": true,
+      "seconds": 3.1,
+      "detail": {
+        "output": {
+          "square": 49
+        },
+        "tests": "1 passed in 0.01s"
+      }
+    },
+    {
+      "case": "python: failing validation tests mark the job failed",
+      "passed": true,
+      "seconds": 2.5,
+      "detail": "validation tests failed"
+    },
+    {
+      "case": "python: no network in the python profile",
+      "passed": true,
+      "seconds": 1.0,
+      "detail": "blocked OSError"
+    },
+    {
+      "case": "python-net: scrape a public page through the egress proxy",
+      "passed": true,
+      "seconds": 2.5,
+      "detail": {
+        "output": {
+          "title": "Example Domain"
+        },
+        "egress": {
+          "allowed": 1,
+          "blocked": 0,
+          "destinations": [
+            {
+              "host": "example.com",
+              "port": 443,
+              "connected_ip": "172.66.147.243",
+              "trusted_target": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case": "python-net: hosts outside the allowlist are blocked",
+      "passed": true,
+      "seconds": 2.0,
+      "detail": "403 domain-not-in-allowlist"
+    },
+    {
+      "case": "browser: declarative actions, extraction, screenshot and HTML",
+      "passed": true,
+      "seconds": 4.0,
+      "detail": {
+        "extracted": {
+          "first_paragraph": "This domain is for use in documentation examples without needing permission. This is not a service; avoid relying on it for testing and monitoring purposes.",
+          "links": [
+            "https://iana.org/help/example-domains"
+          ]
+        },
+        "artifacts": [
+          "page.html",
+          "screenshot.png",
+          "viewport.png"
+        ],
+        "png_bytes": 73878
+      }
+    },
+    {
+      "case": "browser: generated Playwright code via vrt_sandbox.launch_chromium",
+      "passed": true,
+      "seconds": 4.0,
+      "detail": {
+        "output": {
+          "title": "Example Domain"
+        },
+        "artifacts": [
+          "code.png"
+        ]
+      }
+    },
+    {
+      "case": "artifacts are served as untrusted attachments",
+      "passed": true,
+      "seconds": 1.0,
+      "detail": {
+        "content-disposition": "attachment; filename=\"x.html\"",
+        "x-content-type-options": "nosniff",
+        "content-security-policy": "sandbox; default-src 'none'"
+      }
+    },
+    {
+      "case": "compat POST /run (backend contract)",
+      "passed": true,
+      "seconds": 1.0,
+      "detail": {
+        "exit_code": 0,
+        "timed_out": false,
+        "duration_ms": 1013,
+        "status": "succeeded"
+      }
+    },
+    {
+      "case": "compat POST /screenshot (backend contract)",
+      "passed": true,
+      "seconds": 3.3,
+      "detail": {
+        "status": 200,
+        "png_b64_len": 98504,
+        "html_len": 1989
+      }
+    }
+  ]
+}

@@ -129,7 +129,7 @@ def cancel_job(job_id: str, purge: bool = Query(False, description="Also delete 
 @app.get("/v1/profiles", tags=["system"])
 def profiles(principal: str = Depends(require_principal)):
     return {name: {"networked": p.networked, "default_timeout_s": p.default_timeout_s, "max_timeout_s": p.max_timeout_s,
-                   "memory_mb": p.memory_mb, "cpus": p.cpus, "pids_limit": p.pids} for name, p in PROFILES.items()}
+                   "memory_mb": p.memory_mb, "cpus": p.cpus, "pids_limit": p.nproc} for name, p in PROFILES.items()}
 
 
 @app.get("/v1/security/events", tags=["security"])

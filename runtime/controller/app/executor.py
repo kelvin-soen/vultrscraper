@@ -98,15 +98,24 @@ class Executor:
         env = {"VRT_TRUSTED_TARGETS": settings.trusted_targets, "VRT_BLOCKED_IPS": ",".join(host_addresses())}
         try:
             c = self.client.containers.get(settings.proxy_name)
-            if c.image.id != image_id or c.attrs["Config"]["Env"] is None or \
-                    f"VRT_TRUSTED_TARGETS={env['VRT_TRUSTED_TARGETS']}" not in c.attrs["Config"]["Env"]:
-                c.remove(force=True)
-                raise NotFound("recreate")
-            if c.status != "running":
-                c.start()
-            return
         except NotFound:
-            pass
+            c = None
+        if c is not None:
+            env_now = c.attrs["Config"].get("Env") or []
+            stale = c.attrs.get("Image") != image_id or \
+                f"VRT_TRUSTED_TARGETS={env['VRT_TRUSTED_TARGETS']}" not in env_now or \
+                f"VRT_BLOCKED_IPS={env['VRT_BLOCKED_IPS']}" not in env_now
+            if not stale:
+                if c.status != "running":
+                    c.start()
+                return
+            c.remove(force=True)
+            for _ in range(40):
+                try:
+                    self.client.containers.get(settings.proxy_name)
+                    time.sleep(0.25)
+                except NotFound:
+                    break
         self.client.containers.run(
             settings.proxy_image, name=settings.proxy_name, detach=True, network=settings.egress_network,
             restart_policy={"Name": "unless-stopped"}, read_only=True, cap_drop=["ALL"],
@@ -277,7 +286,7 @@ class Executor:
                 "profile": prof.name, "code": spec.get("code"), "test_code": spec.get("test_code"),
                 "inputs": spec.get("inputs"), "browser": spec.get("browser"),
                 "timeout_s": limits["timeout_s"], "memory_mb": limits["memory_mb"],
-                "rlimit_as": prof.rlimit_as, "nproc": prof.pids,
+                "rlimit_as": prof.rlimit_as, "nproc": prof.nproc,
                 "max_output_bytes": limits["max_output_kb"] * 1024,
             }
             b64 = base64.b64encode(json.dumps(runner_spec).encode()).decode()
@@ -297,7 +306,7 @@ class Executor:
                 "network": "none" if not prof.networked else "internal per-job network; egress only via SSRF-filtering proxy",
                 "egress_policy": egress and {k: v for k, v in egress.items() if k != "expires_at"},
                 "memory_mb": limits["memory_mb"], "swap": "disabled",
-                "cpus": limits["cpus"], "pids_limit": prof.pids,
+                "cpus": limits["cpus"], "pids_limit": prof.nproc, "host_pids_backstop": prof.pids,
                 "tmpfs": {"/work": f"{prof.tmpfs_work_mb}m noexec,nosuid,nodev",
                           "/tmp": f"{prof.tmpfs_tmp_mb}m noexec,nosuid,nodev", "/dev/shm": f"{prof.shm_mb}m"},
                 "timeout_s": limits["timeout_s"], "max_output_kb": limits["max_output_kb"],
@@ -407,6 +416,11 @@ class Executor:
                                     "reason": ev.get("reason"), "resolved": ev.get("resolved"), "ts": ev.get("ts")})
                         elif ev.get("action") == "allowed":
                             tel["egress"]["allowed"] += 1
+                            dests = tel["egress"].setdefault("destinations", [])
+                            if len(dests) < 100:
+                                dests.append({"host": ev.get("host"), "port": ev.get("port"),
+                                              "connected_ip": ev.get("connected_ip"),
+                                              "trusted_target": ev.get("trusted_target", False)})
                 os.remove(events_path)
             tel["duration_ms"] = int((_now() - t_start) * 1000)
 

@@ -106,8 +106,8 @@ curl -s -X DELETE http://127.0.0.1:8001/v1/jobs/job-… -H "Authorization: Beare
   "browser": {
     "url": "https://example.com",
     "actions": [
-      {"type": "wait_for_selector", "selector": "h1"},
-      {"type": "extract_text", "selector": "h1", "name": "title"},
+      {"type": "wait_for_selector", "selector": "p"},
+      {"type": "extract_text", "selector": "p", "name": "first_paragraph"},
       {"type": "extract_attribute", "selector": "a", "attr": "href", "all": true, "name": "links"},
       {"type": "screenshot", "name": "after", "full_page": true}
     ],
