@@ -19,6 +19,9 @@ site changes. Every attempt, check and security event is shown in the UI.
 
 Built for the Vultr hackathon. It runs on one Vultr VM.
 
+<img width="1470" height="833" alt="Screenshot 2026-11-27 at 16 26 10" src="https://github.com/user-attachments/assets/935853b1-dfad-4bdd-9df3-cb9d723a58ae" />
+
+
 ## Architecture
 
 ```
