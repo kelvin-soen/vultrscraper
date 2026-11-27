@@ -17,6 +17,7 @@ import ai_client
 import config
 import sandbox_client
 import scrapers
+import verify
 
 app = FastAPI(title="Self-healing scraper")
 
@@ -59,8 +60,9 @@ def parse_items(stdout: str) -> list[dict]:
     return items
 
 
-def _check_attempt(job: dict, res: dict) -> tuple[bool, str, str, list[dict]]:
-    """Returns (ok, verdict, reason, items)."""
+def _check_attempt(job: dict, res: dict, html: str) -> tuple[bool, str, str, list[dict]]:
+    """Returns (ok, verdict, reason, items).
+    Order: run result -> JSON -> evidence check (page text, no AI) -> vision check."""
     if res.get("timed_out"):
         return False, "fail", "scraper timed out", []
     if res.get("exit_code") != 0:
@@ -70,17 +72,24 @@ def _check_attempt(job: dict, res: dict) -> tuple[bool, str, str, list[dict]]:
         items = parse_items(res.get("stdout") or "")
     except ValueError as e:
         return False, "fail", str(e), []
+
+    ev_ok, ev_reason = verify.evidence_check(items, html)
+    if not ev_ok:
+        return False, "fail", ev_reason, items
+    head = f"{len(items)} items; {ev_reason}"
+
     if not job["screenshot_base64"]:
-        return True, "unverified", f"{len(items)} items parsed; no screenshot to verify against", items
+        return True, "unverified", f"{head}; no screenshot for vision check", items
     try:
         job["vision_calls"] += 1
-        match, why = ai_client.vision_check(job["screenshot_base64"], items)
+        seen, cropped = ai_client.vision_prices(job["screenshot_base64"])
+        match, why = verify.compare_prices(items, seen, cropped)
     except Exception as e:
-        # Vision model down/garbled: accept parsed data but say it is unverified.
-        return True, "unverified", f"{len(items)} items parsed; vision check error: {e}", items
+        # Vision unavailable/garbled: evidence check passed, so accept but mark unverified.
+        return True, "unverified", f"{head}; vision check error: {str(e)[:200]}", items
     if match:
-        return True, "pass", f"{len(items)} items; vision check agrees: {why}", items
-    return False, "fail", f"vision check disagrees: {why}", items
+        return True, "pass", f"{head}; {why}", items
+    return False, "fail", why, items
 
 
 MAX_SECURITY_EVENTS = 50
@@ -139,7 +148,7 @@ def _run_job(job_id: str, url: str, saved_code: str | None = None) -> None:
                                runtime_job_id=res.get("job_id"),
                                sandbox=sandbox_client.sandbox_info(res, RUN_TIMEOUT_S))
                 attempt["reason"] = "checking output"
-                ok, verdict, reason, items = _check_attempt(job, res)
+                ok, verdict, reason, items = _check_attempt(job, res, html)
             if ok and source == "saved":
                 reason = "saved scraper, still works; " + reason
             attempt.update(verdict=verdict, reason=reason)
