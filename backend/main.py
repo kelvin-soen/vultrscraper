@@ -5,6 +5,7 @@ vision check vs screenshot -> on failure AI fixes the scraper -> retry (max 3).
 """
 import json
 import threading
+import time
 import traceback
 import uuid
 from pathlib import Path
@@ -16,10 +17,13 @@ from pydantic import BaseModel
 import ai_client
 import config
 import sandbox_client
+from intelligence import hook as intel_hook  # intelligence layer (INTELLIGENCE=0 disables)
+from intelligence.api import router as intel_router
 import scrapers
 import verify
 
 app = FastAPI(title="Self-healing scraper")
+app.include_router(intel_router)
 
 JOBS: dict[str, dict] = {}
 RUN_TIMEOUT_S = 30
@@ -224,13 +228,19 @@ def _run_job(job_id: str, url: str, saved_code: str | None = None) -> None:
                                sandbox=sandbox_client.sandbox_info(res, RUN_TIMEOUT_S))
                 attempt["reason"] = "checking output"
                 ok, verdict, reason, items = _check_attempt(job, res, html)
+            if ok:  # intelligence: a reused scraper whose output drifted from its baseline is repaired
+                drift_reason = intel_hook.drift_check(job, url, items, source)
+                if drift_reason:
+                    ok, verdict, reason = False, "fail", drift_reason
             if ok and source == "saved":
                 reason = "saved scraper, still works; " + reason
             attempt.update(verdict=verdict, reason=reason)
 
             if ok:
                 scrapers.save(url, code)
-                job.update(results=items, final_code=code, status="done")
+                job.update(results=items, final_code=code)
+                intel_hook.after_success(job, job_id, url, html, items, code, source, verdict)
+                job.update(status="done", finished_at=_now())
                 return
             if reason == EMPTY_REASON and not job.get("js_checked"):
                 job["js_checked"] = True
@@ -245,10 +255,16 @@ def _run_job(job_id: str, url: str, saved_code: str | None = None) -> None:
 
         job["status"] = "failed"
         job["error"] = f"no working scraper after {config.MAX_ATTEMPTS} attempts"
+        job["finished_at"] = _now()
     except Exception as e:  # keep the error visible in the job, never crash the server
         traceback.print_exc()
         job["status"] = "failed"
         job["error"] = f"{type(e).__name__}: {e}"
+        job["finished_at"] = _now()
+
+
+def _now() -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
 def _check_url(url: str) -> None:
@@ -264,6 +280,7 @@ def _start_job(url: str, saved_code: str | None = None, parent: str | None = Non
             "parent": parent, "attempts": [], "results": [], "screenshot_base64": None,
             "error": None, "final_code": None, "code_model_calls": 0, "vision_calls": 0,
             "js_checked": False, "title": None, "security": {"events": [], "benchmark": None},
+            "created_at": _now(), "finished_at": None,
         }
     threading.Thread(target=_run_job, args=(job_id, url, saved_code), daemon=True).start()
     return job_id
@@ -272,7 +289,8 @@ def _start_job(url: str, saved_code: str | None = None, parent: str | None = Non
 @app.post("/api/jobs")
 def create_job(body: JobIn):
     _check_url(body.url)
-    return {"id": _start_job(body.url)}
+    saved = intel_hook.saved_scraper(body.url)  # reuse the last verified scraper for this site
+    return {"id": _start_job(body.url, saved_code=saved["code"] if saved else None)}
 
 
 @app.post("/api/jobs/{job_id}/rerun")
@@ -283,7 +301,8 @@ def rerun_job(job_id: str, body: JobIn):
     parent = JOBS.get(job_id)
     if parent is None:
         raise HTTPException(404, "job not found")
-    saved = scrapers.get(body.url) or parent.get("final_code")
+    saved = (scrapers.get(body.url) or (intel_hook.saved_scraper(body.url) or {}).get("code")
+             or parent.get("final_code"))
     if not saved:
         raise HTTPException(409, "no saved scraper for this site yet; run a normal job first")
     return {"id": _start_job(body.url, saved_code=saved, parent=job_id)}
@@ -292,7 +311,7 @@ def rerun_job(job_id: str, body: JobIn):
 @app.post("/api/scrapers/reset")
 def reset_scrapers():
     """Forget all saved scrapers (start the demo clean)."""
-    return {"cleared": scrapers.reset()}
+    return {"cleared": scrapers.reset(), "retired_versions": intel_hook.on_reset()}
 
 
 @app.get("/api/scrapers")

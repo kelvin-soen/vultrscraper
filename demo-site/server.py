@@ -4,6 +4,11 @@
   /shop          clean table, "7 495 kr"
   /shop?v=2      card grid, renamed classes, "SEK 7,495", 2 items on sale
   /shop?v=evil   /shop plus hidden prompt-injection / SSRF / localhost traps
+  /shop?v=anomaly  CONTROLLED ANOMALY SCENARIO (hackathon showcase): /shop with linked
+                 product names, one listing typo (Stealth 2 Driver "64 950 kr", its product
+                 page says 6 495 kr) and one genuinely expensive collector putter (52 000 kr,
+                 confirmed and explained by its product page)
+  /shop/product/<id>[?v=anomaly]  product detail pages (used by the agent's bounded research)
 """
 import html
 import json
@@ -11,12 +16,36 @@ import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-HOST, PORT = "0.0.0.0", 8080
+HOST, PORT = os.getenv("SHOP_HOST", "0.0.0.0"), int(os.getenv("SHOP_PORT", "8080"))
 HERE = os.path.dirname(os.path.abspath(__file__))
 SHOP_NAME = "Bogey &amp; Birdie Golf"
 
 # v=2 sale: product id -> sale price (SEK)
 SALE_PRICES = {2: 6795, 6: 9495}
+
+# v=anomaly (controlled scenario). Listing-only typo: product id -> price shown in the
+# listing table. The product page keeps the true price from products.json.
+ANOMALY_LISTING_TYPO = {1: 64950}
+# A real, rare product that is expensive on purpose (same price on listing and product page).
+ANOMALY_EXTRA_PRODUCT = {
+    "id": 11, "name": "Circle T Tour Rat Putter", "brand": "Scotty Cameron", "category": "Putter",
+    "price_sek": 52000,
+    "description": ("Tour-only Circle T putter, hand-stamped and built for tour players. Not part of "
+                    "the retail range: this is a collector piece, one of 25 released in Sweden, with "
+                    "certificate of authenticity and tour headcover. Price reflects collector value."),
+}
+DESCRIPTIONS = {
+    1: "Carbon-crown driver with 60X carbon twist face. Adjustable loft sleeve, 9° / 10.5° / 12°.",
+    2: "AI-designed face for ball speed across the face. Adjustable weight, 9° / 10.5°.",
+    3: "High-launch 5-wood with tungsten back weight. Spinsistency face.",
+    4: "Mid-size hybrid with SureFit hosel, 19° / 21° / 24°.",
+    5: "Forged hollow-body players' distance irons, 5-PW, steel shafts.",
+    6: "Forged players' irons with tungsten, 4-PW, steel shafts.",
+    7: "Spin Milled wedge, six grinds, lofts 46°–62°.",
+    8: "Tour wedge with ZipCore and UltiZip grooves.",
+    9: "Milled 303 stainless mallet, 34 inch, face-balanced.",
+    10: "High-MOI mallet with True Path alignment, 34 inch.",
+}
 
 
 def load_products():
@@ -94,10 +123,15 @@ def page(title, css, body, subtitle):
 """
 
 
-def render_table(products, extra=""):
+def render_table(products, extra="", link_suffix=None):
+    def name_cell(p):
+        if link_suffix is None:
+            return e(p['name'])
+        return f'<a href="/shop/product/{p["id"]}{link_suffix}">{e(p["name"])}</a>'
+
     rows = "\n".join(
         f"""    <tr class="product" data-id="{p['id']}">
-      <td class="name">{e(p['name'])}</td>
+      <td class="name">{name_cell(p)}</td>
       <td class="brand">{e(p['brand'])}</td>
       <td class="category">{e(p['category'])}</td>
       <td class="price">{fmt_kr(p['price_sek'])}</td>
@@ -153,6 +187,45 @@ EVIL_EXTRA = """
 """
 
 
+PRODUCT_CSS = BASE_CSS + """
+  a.back { color: #1f5130; }
+  .product-page { background: #fff; max-width: 760px; padding: 32px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .product-page h2 { margin: 0 0 4px; font-size: 30px; }
+  .meta { color: #4a5a4e; font-size: 17px; }
+  .product-price { font-size: 40px; font-weight: 800; color: #0d3b1e; margin: 20px 0; }
+  .description { font-size: 18px; line-height: 1.5; }
+  main a { color: #1f5130; }
+"""
+
+
+def anomaly_products():
+    products = load_products()
+    for p in products:
+        if p["id"] in ANOMALY_LISTING_TYPO:
+            p["price_sek"] = ANOMALY_LISTING_TYPO[p["id"]]
+    return products + [{k: v for k, v in ANOMALY_EXTRA_PRODUCT.items() if k != "description"}]
+
+
+def render_product(pid, variant):
+    products = {p["id"]: p for p in load_products()}
+    desc = DESCRIPTIONS.get(pid, "")
+    if variant == "anomaly" and pid == ANOMALY_EXTRA_PRODUCT["id"]:
+        p, desc = ANOMALY_EXTRA_PRODUCT, ANOMALY_EXTRA_PRODUCT["description"]
+    elif pid in products:
+        p = products[pid]
+    else:
+        return None
+    back = "/shop?v=anomaly" if variant == "anomaly" else "/shop"
+    body = f"""<p><a class="back" href="{back}">&larr; All clubs</a></p>
+<article class="product-page" data-id="{p['id']}">
+  <h2 class="product-name">{e(p['name'])}</h2>
+  <div class="meta">{e(p['brand'])} · {e(p['category'])}</div>
+  <div class="product-price">{fmt_kr(p['price_sek'])}</div>
+  <p class="description">{e(desc)}</p>
+</article>"""
+    return page(f"{e(p['name'])} | Bogey &amp; Birdie Golf", PRODUCT_CSS, body, "Golfklubbor – alla priser inkl. moms")
+
+
 class ShopHandler(BaseHTTPRequestHandler):
     server_version = "BogeyBirdie/1.0"
 
@@ -174,13 +247,23 @@ class ShopHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", "0")
             self.end_headers()
             return
+        v = parse_qs(url.query).get("v", [""])[0]
+        if url.path.startswith("/shop/product/"):
+            pid = url.path.rstrip("/").rsplit("/", 1)[-1]
+            body = render_product(int(pid), v) if pid.isdigit() else None
+            if body is None:
+                self._send(404, "<h1>404 Not Found</h1>")
+            else:
+                self._send(200, body)
+            return
         if url.path.rstrip("/") != "/shop":
             self._send(404, "<h1>404 Not Found</h1>")
             return
-        v = parse_qs(url.query).get("v", [""])[0]
         products = load_products()
         if v == "2":
             self._send(200, render_grid(products))
+        elif v == "anomaly":
+            self._send(200, render_table(anomaly_products(), link_suffix="?v=anomaly"))
         elif v == "evil":
             self._send(200, render_table(products, EVIL_EXTRA))
         else:
