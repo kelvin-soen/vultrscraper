@@ -100,6 +100,8 @@ export function runView({ url, startedAt = Date.now(), onViewReport, onRetry, on
       titleEl.textContent = hostOf(job.url) || job.url;
       urlEl.textContent = displayUrl(job.url);
     }
+    // The page <title> (backend reads it right after the screenshot) beats a bare host.
+    if (job.title && titleEl.textContent !== job.title) titleEl.textContent = job.title;
     current = job;
     const running = job.status === "running";
     view.classList.toggle("is-running", running);

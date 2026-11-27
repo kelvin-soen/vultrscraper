@@ -40,7 +40,12 @@ js/model/             pure logic: job interpretation, schema inference, formatti
 js/components/        UI building blocks (no fetch, no global state)
 js/views/             the three states
 js/dashboard/         spec block registry + SVG charts (predefined components only)
-dev/                  DEVELOPMENT ONLY: mock adapter + fixtures (?mock=)
+js/components/cube.js live 3D loader: the logo as a rolling die, driven by js/model/live.js
+js/model/export.js    Markdown / CSV / JSON / e-mail / scraper exports (field whitelist)
+js/model/history.js   recent runs + saved report copies (this browser only)
+dev/                  DEVELOPMENT ONLY: mock adapter + fixtures (?mock=), proxy.py
+                      (frontend against a live backend), cube.html (loader lab),
+                      e2e-live.mjs (end-to-end check against a real backend)
 tests/                node:test suites for model, schema, url, client, fixtures
 ```
 

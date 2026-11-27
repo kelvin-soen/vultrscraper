@@ -119,7 +119,8 @@ function startRun(id, url, { push = true, resumed = false } = {}) {
   state.startedAt = known?.startedAt || Date.now();
   state.finishedAt = known?.finishedAt || 0;
   if (push) setUrl({ job: id });
-  if (!resumed || !known) recordRun(id, { url: url || undefined, startedAt: state.startedAt, status: "running" });
+  // Mock runs (?mock=) never enter the real history.
+  if (!state.adapter.isMock && (!resumed || !known)) recordRun(id, { url: url || undefined, startedAt: state.startedAt, status: "running" });
 
   const view = runView({
     url,
@@ -181,6 +182,7 @@ function startRun(id, url, { push = true, resumed = false } = {}) {
 
 /** Keep the local history entry (and the saved copy) in step with the backend. */
 function track(id, job, raw) {
+  if (state.adapter.isMock) return;
   const prev = getEntry(id);
   const patch = {
     url: job.url || undefined,

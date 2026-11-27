@@ -232,7 +232,7 @@ function recentRow(e, { onOpen, onRunAgain, refresh }) {
   const date = when ? new Date(when) : null;
   const facts = [];
   if (typeof e.records === "number" && e.status !== "running") facts.push(`${e.records} record${e.records === 1 ? "" : "s"}`);
-  if (e.reused) facts.push("saved scraper");
+  if (e.reused) facts.push("reused scraper");
   const open = h(
     "button",
     { class: "recent__open", type: "button", onClick: () => onOpen?.(e), "aria-label": `Open report for ${e.title || host}` },

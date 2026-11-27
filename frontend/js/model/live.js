@@ -94,6 +94,20 @@ export function liveStage(raw) {
     return { key: "unknown", mode: "prepare", label: "Working", detail: shorten(last.reason), attempt: n, terminal: false };
   }
 
+  // Older payloads (no "running" verdict / reason vocabulary): infer from what exists.
+  if (!verdict || verdict === "pending" || verdict === "unknown") {
+    const hasCode = !!str(last.code);
+    const ran = last.exit_code !== null && last.exit_code !== undefined;
+    if (!hasCode) {
+      return n > 1
+        ? { key: "repair", mode: "repair", label: "Repairing the scraper", detail: prev ? `Attempt ${prev.n} failed: ${shorten(prev.reason, 90)}` : "Writing a fix", attempt: n, terminal: false }
+        : { key: "generate", mode: "generate", label: "Writing a scraper", detail: `${codeModel || "The code model"} is writing Python for ${target}`, attempt: n, terminal: false };
+    }
+    if (!ran) return { key: "execute", mode: "execute", label: n > 1 ? "Running the repaired scraper" : "Running in the sandbox", detail: `Attempt ${n} in a disposable sandbox container`, attempt: n, terminal: false };
+    const c = countRecords(last.stdout);
+    return { key: "verify", mode: "verify", label: "Verifying results", detail: c ? `Checking ${c} extracted record${c === 1 ? "" : "s"} against the page and screenshot` : "Checking the output", attempt: n, terminal: false };
+  }
+
   // Last attempt has a verdict but the job is still running: the backend is between
   // steps (e.g. the next attempt is about to be appended, or the switch to rendered mode).
   if (verdict === "fail") return { key: "repair", mode: "repair", label: "Attempt failed", detail: shorten(last.reason, 120), attempt: n, terminal: false };

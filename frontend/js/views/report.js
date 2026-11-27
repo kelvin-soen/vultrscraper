@@ -43,11 +43,11 @@ export function reportView(job, { onRerun, observedMs, observed = {}, fromSnapsh
   /* ---- header ---------------------------------------------------------- */
   const times = reportTimes(job, observed);
   const metaBits = [pluralize(job.results.length, "record"), pluralize(job.attempts.length, "attempt")];
-  if (job.attempts[0]?.source === "saved") metaBits.push("saved scraper");
+  if (job.attempts[0]?.source === "saved") metaBits.push(job.attempts.length > 1 ? "saved scraper repaired" : "saved scraper reused");
   const duration = job.durationMs ?? observedMs ?? null;
   if (duration != null) metaBits.push(formatDuration(duration));
   const when = times.finished
-    ? h("time", { class: "report__when", datetime: times.finished.toISOString(), title: `${formatTime(times.finished)}${times.source === "browser" ? " (as observed in this browser)" : ""}`, text: relativeTime(times.finished) })
+    ? h("time", { class: "report__when", "data-abs": formatTime(times.finished), datetime: times.finished.toISOString(), title: `${formatTime(times.finished)}${times.source === "browser" ? " (as observed in this browser)" : ""}`, text: relativeTime(times.finished) })
     : null;
 
   const actions = reportActions(job, { onRerun, observed, isMock, fromSnapshot, onBeforePrint: () => renderAllForPrint() });
