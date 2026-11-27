@@ -8,7 +8,7 @@
  * and components/; API access lives in api/; interpretation in model/.
  */
 
-import { h, icon, replace } from "./dom.js";
+import { brandMark, h, icon, replace } from "./dom.js";
 import { resolveAdapter } from "./api/index.js";
 import { pollJob } from "./api/client.js";
 import { normalizeJob } from "./model/job.js";
@@ -62,7 +62,7 @@ function renderTopbar(name) {
         goHome();
       },
     },
-    h("span", { class: "wordmark__glyph", "aria-hidden": "true" }),
+    brandMark(),
     h("span", { class: "wordmark__text", text: BRAND.name })
   );
   const right = name === "home" ? null : h("button", { class: "btn btn--ghost btn--sm", type: "button", onClick: () => goHome() }, icon("arrowLeft", { size: 14 }), h("span", { text: "New" }));
