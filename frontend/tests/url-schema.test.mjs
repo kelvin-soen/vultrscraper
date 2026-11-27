@@ -62,7 +62,8 @@ test("sorting is numeric-aware and stable on nulls", () => {
 });
 
 test("formatting helpers", () => {
-  assert.equal(formatMoney(1299, "SEK"), "1,299 kr");
+  assert.equal(formatMoney(1299, "SEK"), "1\u202f299 kr");
+  assert.equal(formatMoney(64950.5, "SEK"), "64\u202f950,50 kr");
   assert.equal(humanizeKey("productName"), "Product name");
   assert.equal(humanizeKey("price_usd"), "Price");
 });

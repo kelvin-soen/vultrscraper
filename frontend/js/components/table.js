@@ -4,7 +4,7 @@ import { h, icon, replace } from "../dom.js";
 import { cellValue, formatCell, sortRows } from "../model/schema.js";
 import { safeHref } from "../url.js";
 
-export function dataTable(rows, columns, { caption, filterable = rows.length > 8 } = {}) {
+export function dataTable(rows, columns, { caption, filterable = rows.length > 8, rowMarker = null, markerLabel = "Status" } = {}) {
   let sortCol = null;
   let sortDir = "asc";
   let query = "";
@@ -41,7 +41,8 @@ export function dataTable(rows, columns, { caption, filterable = rows.length > 8
         ? sorted.map((r) =>
             h(
               "tr",
-              null,
+              { class: rowMarker && rowMarker(r) ? "is-flagged" : null },
+              rowMarker ? h("td", { class: "table__marker" }, rowMarker(r)) : null,
               columns.map((c) => {
                 const v = cellValue(r, c);
                 const text = formatCell(v, c);
@@ -54,7 +55,7 @@ export function dataTable(rows, columns, { caption, filterable = rows.length > 8
               })
             )
           )
-        : h("tr", null, h("td", { colspan: String(columns.length), class: "table__none c-3", text: "No records match your filter." }))
+        : h("tr", null, h("td", { colspan: String(columns.length + (rowMarker ? 1 : 0)), class: "table__none c-3", text: "No records match your filter." }))
     );
     count.textContent = q ? `${sorted.length} of ${rows.length}` : `${rows.length} record${rows.length === 1 ? "" : "s"}`;
   }
@@ -81,7 +82,7 @@ export function dataTable(rows, columns, { caption, filterable = rows.length > 8
     h(
       "div",
       { class: "table__scroll", tabindex: "0", role: "region", "aria-label": caption || "Extracted records" },
-      h("table", null, caption ? h("caption", { class: "sr-only", text: caption }) : null, h("thead", null, h("tr", null, headers.map((x) => x.th))), tbody)
+      h("table", null, caption ? h("caption", { class: "sr-only", text: caption }) : null, h("thead", null, h("tr", null, rowMarker ? h("th", { scope: "col", class: "table__marker" }, h("span", { class: "sr-only", text: markerLabel })) : null, headers.map((x) => x.th))), tbody)
     )
   );
 }

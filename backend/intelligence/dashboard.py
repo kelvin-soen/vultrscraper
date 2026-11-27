@@ -9,13 +9,15 @@ Allowed block types: kpis, findings, chart, anomalies, quality, table, evidence,
 history, scraper, agent (see FRONTEND_BLOCKS).
 Chart kinds: price_strip, category_bars, price_change.
 """
+import statistics
+
 FRONTEND_BLOCKS = {"kpis", "findings", "chart", "anomalies", "quality", "table", "evidence",
                    "history", "scraper", "agent"}
 CHART_KINDS = {"price_strip", "category_bars", "price_change"}
 
 
 def _fmt(n) -> str:
-    return f"{round(n):,}".replace(",", " ") + " kr"
+    return f"{round(n):,}".replace(",", "\u00a0") + "\u00a0kr"  # no-break: never wraps inside a price
 
 
 def _pct(r: float) -> str:
@@ -35,24 +37,37 @@ def key_findings(analysis: dict, findings: list[dict], verdict: str, drift: dict
         out.append({"kind": "attention", "ref": f["id"],
                     "text": f"{f['name']} is listed at {_fmt(f['original_value'])}. {f['assessment_label']}"
                             f" ({f['confidence']} confidence). Kept as listed and flagged for review."})
-    cats = [c for c in stats["categories"] if c["key"] != "uncategorised" and c["count"] >= 2]
-    if len(cats) >= 2:
-        top = cats[0]
-        out.append({"kind": "insight", "text": f"{top['label']}s are the most expensive category, "
-                                               f"median {_fmt(top['median'])} across {top['count']} listings."})
+    # Category insight on unflagged values only, so one anomaly can't skew it.
+    groups: dict[str, list[int]] = {}
+    labels = {}
+    for r in recs:
+        if r["flagged"] or r["category"]["key"] == "uncategorised":
+            continue
+        groups.setdefault(r["category"]["key"], []).append(r["price_sek"])
+        labels[r["category"]["key"]] = r["category"]["label"]
+    meds = sorted(((statistics.median(v), k, len(v)) for k, v in groups.items()), reverse=True)
+    if len(meds) >= 2:
+        med, k, cnt = meds[0]
+        note = " (flagged values excluded)" if findings else ""
+        out.append({"kind": "insight", "text": f"{labels[k]}s are the most expensive category: median {_fmt(med)} "
+                                               f"across {cnt} listing{'s' if cnt != 1 else ''}{note}."})
     compared = [r for r in recs if r.get("previous")]
     if compared:
         changed = [r for r in compared if r["price_sek"] != r["previous"]["price"]]
         unflagged = [r for r in changed if not r["flagged"]]
         if not changed:
             out.append({"kind": "change", "text": f"All {len(compared)} known products kept their price since the last run."})
-        else:
-            big = max(unflagged or changed, key=lambda r: abs(r["price_sek"] / r["previous"]["price"] - 1))
+        elif unflagged:
+            big = max(unflagged, key=lambda r: abs(r["price_sek"] / r["previous"]["price"] - 1))
             out.append({"kind": "change", "text": f"{len(changed)} of {len(compared)} known products changed price since the "
-                                                  f"last run; largest: {big['name']} {_pct(big['price_sek'] / big['previous']['price'])}."})
+                                                  f"last run; largest regular change: {big['name']} "
+                                                  f"{_pct(big['price_sek'] / big['previous']['price'])}."})
+        else:
+            out.append({"kind": "change", "text": f"Apart from the flagged value{'s' if len(changed) != 1 else ''}, all "
+                                                  f"{len(compared) - len(changed)} known products kept their price since the last run."})
         new = n - len(compared)
         if new:
-            out.append({"kind": "change", "text": f"{new} product{'s' if new != 1 else ''} appear for the first time."})
+            out.append({"kind": "change", "text": f"{new} product{'s appear' if new != 1 else ' appears'} for the first time."})
     if drift and drift["status"] == "drift":
         out.append({"kind": "attention", "text": drift["reason"] or "The output drifted from the saved scraper's baseline."})
     return out[:6]
@@ -66,7 +81,8 @@ def build(job: dict, analysis: dict, findings: list[dict], scraper: dict | None,
     kpis = [
         {"id": "records", "label": "Records", "value": str(n)},
         {"id": "median", "label": "Median price", "value": _fmt(stats["median"])} if stats["median"] is not None else None,
-        {"id": "range", "label": "Price range", "value": f"{_fmt(stats['min'])} – {_fmt(stats['max'])}"} if n else None,
+        {"id": "range", "label": "Price range", "value": f"{_fmt(stats['min'])[:-3]}–{_fmt(stats['max'])}",
+         "caption": f"includes {flagged} flagged" if flagged else None} if n else None,
         {"id": "verification", "label": "Extraction", "value": outcome,
          "caption": "page text + screenshot" if verdict == "pass" else "page text only"},
         {"id": "plausibility", "label": "Plausibility", "value": f"{n - flagged}/{n}",
@@ -86,11 +102,17 @@ def build(job: dict, analysis: dict, findings: list[dict], scraper: dict | None,
         charts.append({"type": "chart", "kind": "price_strip", "title": "Where each price sits",
                        "subtitle": "One dot per product, grouped by category. Ringed dots are flagged.",
                        "points": points, "scale": "log" if stats["max"] / max(stats["min"], 1) > 20 else "linear"})
-    cats = [c for c in stats["categories"] if c["count"] >= 1]
-    if len(cats) >= 2:
+    groups: dict[str, list] = {}
+    for r in recs:
+        if not r["flagged"]:
+            groups.setdefault(r["category"]["label"], []).append(r)
+    bars = sorted(({"label": k, "value": statistics.median(x["price_sek"] for x in v), "count": len(v),
+                    "band": v[0]["category"]["band"]} for k, v in groups.items()), key=lambda b: -b["value"])
+    if len(bars) >= 2:
         charts.append({"type": "chart", "kind": "category_bars", "title": "Median price by category",
-                       "subtitle": "Line: typical retail range for the category (reference prior).",
-                       "bars": [{"label": c["label"], "value": c["median"], "count": c["count"], "band": c["band"]} for c in cats]})
+                       "subtitle": ("Flagged values excluded. " if findings else "")
+                       + "Bracket: typical retail range for the category (reference prior).",
+                       "bars": bars})
     changes = [{"i": r["index"], "name": r["name"], "before": r["previous"]["price"], "after": r["price_sek"],
                 "flagged": r["flagged"]} for r in recs if r.get("previous")]
     if changes and any(c["before"] != c["after"] for c in changes):

@@ -248,7 +248,8 @@ def investigate(rec: dict, analysis: dict, job_url: str, html: str, *, fetch, ch
         verdict = ai_assessment(rec, ev, chat)
         method = "ai"
     except Exception as e:
-        note = f"AI analyst unavailable or answer rejected ({type(e).__name__}: {str(e)[:120]}); rule-based assessment"
+        note = ("AI reasoning not enabled for this run; rule-based assessment" if chat is None else
+                f"AI analyst unavailable or answer rejected ({type(e).__name__}: {str(e)[:120]}); rule-based assessment")
         log.warning("intel: %s", note)
         verdict = rule_assessment(rec, ev)
     return {
