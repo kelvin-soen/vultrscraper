@@ -185,16 +185,16 @@ def _detail(r: httpx.Response) -> str:
         return r.text[:300]
 
 
-def _real_run(code: str, timeout: int = 30) -> dict:
-    return _post("/run", {"code": code, "timeout": timeout, "network": True}, timeout + 60)
+def _real_run(code: str, timeout: int = 30, network: bool = True) -> dict:
+    return _post("/run", {"code": code, "timeout": timeout, "network": network}, timeout + 60)
 
 
 def _real_screenshot(url: str) -> dict:
     return _post("/screenshot", {"url": url}, 150)
 
 
-def run(code: str, timeout: int = 30) -> dict:
-    return _mock_run(code, timeout) if config.MOCK_SANDBOX else _real_run(code, timeout)
+def run(code: str, timeout: int = 30, network: bool = True) -> dict:
+    return _mock_run(code, timeout) if config.MOCK_SANDBOX else _real_run(code, timeout, network)
 
 
 def screenshot(url: str) -> dict:

@@ -26,7 +26,8 @@ Browser ──HTTP──▶ backend (FastAPI) :8000           backend/   (also s
                    │
                    ├──HTTPS──▶ Vultr Serverless Inference
                    │             glm-5.3      writes and repairs scrapers
-                   │             nemotron-3-nano-omni (vision)  lists prices on the screenshot
+                   │             qwen3.8-flash-next (vision)    lists prices on the screenshot
+                   │             (fallback: nemotron-3-nano-omni, reasoning off)
                    │
                    └──HTTP + Bearer key──▶ runtime controller 127.0.0.1:8001   runtime/
                                              │  POST /run, POST /screenshot, telemetry, benchmark
@@ -79,13 +80,14 @@ An attempt passes only if all of these hold:
    after normalising spaces, `kr`/`SEK`/`:-`, separators and decimals (±1 SEK).
    Hidden elements don't count. This catches invented or garbled prices, even when
    the vision model is unavailable.
-4. **Vision check:** nemotron only *lists* the prices it sees on the screenshot
+4. **Vision check:** qwen3.8-flash-next only *lists* the prices it sees on the screenshot
    (resized to ≤ 1000 px wide, cropped to ≤ 2000 px tall). The comparison is done in
    code: prices on screen that we didn't extract, or extracted prices not on screen,
    fail the attempt.
 
 If the vision model fails, a result that passed the evidence check is marked
-`unverified`, never `pass`. Every AI call has a hard 120 s limit.
+`unverified`, never `pass`. If qwen fails, nemotron (reasoning off) is tried once.
+Code-model calls have a hard 120 s limit, vision calls 60 s.
 
 ## Setup and run
 
@@ -133,9 +135,12 @@ Frontend development and tests: [frontend/README.md](frontend/README.md)
 ## Known limits
 
 - **JavaScript-rendered sites** (e.g. large retailers that build product lists in the
-  browser, or have bot checks) can't be scraped with requests + BeautifulSoup. siftform.
-  detects this after the first empty result and stops with a clear message, instead of
-  spending AI calls on repairs that can't work.
+  browser) return no products to a plain HTTP fetch. siftform. detects this after the
+  first empty result and switches to **rendered mode**: the scraper parses the
+  browser-rendered page from the screenshot step (embedded as `PAGE_HTML`, run with no
+  network). It only sees what is rendered on first load, so infinite scroll, "load more"
+  buttons and other interaction are not covered. In rendered mode the evidence check
+  compares against the same snapshot, so the vision check is the independent one.
 - One saved scraper per site: the key is the URL without its query string, so `/shop`
   and `/shop?v=2` share one.
 - Jobs and saved scrapers are kept in memory.
@@ -147,8 +152,8 @@ Frontend development and tests: [frontend/README.md](frontend/README.md)
 ## Next steps
 
 - **Browser-based scraping:** let generated scrapers use Playwright through the
-  runtime's `browser` profile (`/v1/jobs`, 1536 MB, navigation allowlist), so
-  JavaScript-rendered sites work.
+  runtime's `browser` profile (`/v1/jobs`, 1536 MB, navigation allowlist), so pages
+  that need interaction (scrolling, "load more", pagination) work too.
 - Persist jobs and saved scrapers (SQLite), and key saved scrapers per page layout.
 - Per-product evidence (bounding boxes on the screenshot) for the evidence viewer.
 
