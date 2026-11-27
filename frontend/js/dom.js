@@ -67,6 +67,8 @@ const ICONS = {
   expand: ["M9.5 3.5h3v3", "M6.5 12.5h-3v-3", "M12.5 3.5l-3.5 3.5", "M3.5 12.5l3.5-3.5"],
   refresh: ["M12.5 8a4.5 4.5 0 1 1-1.4-3.3", "M12.5 3v2.5H10"],
   minus: ["M4.5 8h7"],
+  alert: ["M8 4.25v4.75", "M8 11.6v.15"],
+  arrowUpRight: ["M5 11l6-6", "M6 5h5v5"],
 };
 
 export function icon(name, { size = 16, label } = {}) {

@@ -12,6 +12,8 @@
  * The screenshots are hand-drawn SVG mock-ups, not captures of any site.
  */
 
+import { ANOMALY_FIXTURE } from "./intel-fixture.js";
+
 const enc = (s) => {
   const bytes = new TextEncoder().encode(s);
   let bin = "";
@@ -29,6 +31,20 @@ const PRODUCTS = [
 ];
 
 /* ---- mock screenshots ------------------------------------------------- */
+
+function golfTable() {
+  const rows = ANOMALY_FIXTURE.results.map((p, i) => {
+    const y = 170 + i * 52;
+    return `<g><line x1="40" y1="${y + 18}" x2="1240" y2="${y + 18}" stroke="#e2e6df"/>
+      <text x="56" y="${y}" font-family="Helvetica, Arial" font-size="20" fill="#1f5130" text-decoration="underline">${p.name}</text>
+      <text x="1220" y="${y}" font-family="Helvetica, Arial" font-size="26" font-weight="800" fill="#0d3b1e" text-anchor="end">${p.price_sek.toLocaleString("sv-SE")} kr</text></g>`;
+  }).join("");
+  return enc(`<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="780" viewBox="0 0 1280 780">
+    <rect width="1280" height="780" fill="#f4f6f2"/><rect width="1280" height="96" fill="#1f5130"/>
+    <text x="40" y="58" font-family="Helvetica, Arial" font-size="32" font-weight="700" fill="#fff">Bogey &amp; Birdie Golf (mock drawing)</text>
+    <rect x="40" y="120" width="1200" height="${ANOMALY_FIXTURE.results.length * 52 + 30}" fill="#fff"/>${rows}</svg>`);
+}
+
 
 function gridShop({ hostile = false } = {}) {
   const cards = PRODUCTS.map((p, i) => {
@@ -307,6 +323,34 @@ export const SCENARIOS = {
           ],
         };
         s.status = "done";
+      }],
+    ],
+  },
+
+  /** Controlled anomaly scenario: saved scraper reused, two unusual values investigated. */
+  anomaly: {
+    description: "Golf shop ?v=anomaly: saved scraper reused, 2 unusual prices investigated (rule-based fixture).",
+    frames: [
+      [0, (s) => { s.title = "Golf Clubs | Bogey & Birdie Golf"; s.created_at = new Date(Date.now() - 1000).toISOString(); }],
+      [1500, (s) => { s.screenshot_base64 = golfTable(); }],
+      [2500, (s, url) => { s.attempts.push({ ...attempt(1, CODE_V1.replace("{URL}", url)), source: "saved", reason: "running in sandbox" }); }],
+      [5000, (s) => {
+        Object.assign(s.attempts[0], { stdout: out(ANOMALY_FIXTURE.results), exit_code: 0, duration_ms: 2140,
+          sandbox: { runtime: "gVisor (runsc)", network: "egress proxy", timeout_s: 30, container_removed: true } });
+      }],
+      [6500, (s) => {
+        Object.assign(s.attempts[0], { verdict: "pass", reason: "saved scraper, still works; 11 items; evidence check: all 11 prices appear in the page text; vision check agrees: 11/11 visible prices matched" });
+        s.results = ANOMALY_FIXTURE.results;
+        s.phase = "analyzing";
+        s.intelligence = { status: "running" };
+        s.code_model_calls = 0;
+        s.vision_calls = 1;
+      }],
+      [10000, (s) => {
+        s.intelligence = structuredClone(ANOMALY_FIXTURE.intelligence);
+        s.phase = null;
+        s.status = "done";
+        s.finished_at = new Date().toISOString();
       }],
     ],
   },

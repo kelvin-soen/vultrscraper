@@ -10,12 +10,13 @@ const MARK_LABEL = {
   failed: "Failed",
   pending: "Waiting",
   skipped: "Not run",
+  flag: "Needs review",
 };
 
 /** Status marker: shape carries meaning, not colour. */
 export function mark(status, { size = "md", label } = {}) {
   const s = MARK_LABEL[status] ? status : "pending";
-  const glyph = s === "done" ? icon("check", { size: 12 }) : s === "failed" ? icon("x", { size: 12 }) : s === "skipped" ? icon("minus", { size: 12 }) : null;
+  const glyph = s === "done" ? icon("check", { size: 12 }) : s === "failed" ? icon("x", { size: 12 }) : s === "skipped" ? icon("minus", { size: 12 }) : s === "flag" ? icon("alert", { size: 12 }) : null;
   return h("span", { class: `mark mark--${s} mark--${size}`, role: "img", "aria-label": label || MARK_LABEL[s] }, glyph);
 }
 

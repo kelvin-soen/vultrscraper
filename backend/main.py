@@ -5,6 +5,7 @@ vision check vs screenshot -> on failure AI fixes the scraper -> retry (max 3).
 """
 import json
 import threading
+import time
 import traceback
 import uuid
 from pathlib import Path
@@ -17,10 +18,13 @@ import ai_client
 import config
 import sandbox_client
 import rendered
+from intelligence import hook as intel_hook  # intelligence layer (INTELLIGENCE=0 disables)
+from intelligence.api import router as intel_router
 import scrapers
 import verify
 
 app = FastAPI(title="Self-healing scraper")
+app.include_router(intel_router)
 
 JOBS: dict[str, dict] = {}
 RUN_TIMEOUT_S = 30
@@ -245,6 +249,10 @@ def _run_job(job_id: str, url: str, saved: dict | None = None) -> None:
                                                                    network=(mode == "html")))
                 attempt["reason"] = "checking output"
                 ok, verdict, reason, items = _check_attempt(job, res, html)
+            if ok:  # intelligence: a reused scraper whose output drifted from its baseline is repaired
+                drift_reason = intel_hook.drift_check(job, url, items, source)
+                if drift_reason:
+                    ok, verdict, reason = False, "fail", drift_reason
             if ok and source == "saved":
                 reason = "saved scraper, still works; " + reason
             if mode == "rendered" and not reason.startswith("rendered mode"):
@@ -253,7 +261,9 @@ def _run_job(job_id: str, url: str, saved: dict | None = None) -> None:
 
             if ok:
                 scrapers.save(url, code, mode)
-                job.update(results=items, final_code=code, status="done")
+                job.update(results=items, final_code=code)
+                intel_hook.after_success(job, job_id, url, html, items, code, source, verdict)
+                job.update(status="done", finished_at=_now())
                 return
             if mode == "html" and reason == EMPTY_REASON and not job.get("js_checked"):
                 job["js_checked"] = True
@@ -268,7 +278,7 @@ def _run_job(job_id: str, url: str, saved: dict | None = None) -> None:
                     continue
                 if why:  # no attempts left to switch
                     attempt["reason"] = f"{JS_PAGE_MESSAGE} ({why})"
-                    job.update(status="failed", error=JS_PAGE_MESSAGE)
+                    job.update(status="failed", error=JS_PAGE_MESSAGE, finished_at=_now())
                     return
             prev = {"code": code, "reason": reason,
                     "stderr": attempt["stderr"], "stdout": attempt["stdout"]}
@@ -276,10 +286,16 @@ def _run_job(job_id: str, url: str, saved: dict | None = None) -> None:
 
         job["status"] = "failed"
         job["error"] = f"no working scraper after {config.MAX_ATTEMPTS} attempts"
+        job["finished_at"] = _now()
     except Exception as e:  # keep the error visible in the job, never crash the server
         traceback.print_exc()
         job["status"] = "failed"
         job["error"] = f"{type(e).__name__}: {e}"
+        job["finished_at"] = _now()
+
+
+def _now() -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
 def _check_url(url: str) -> None:
@@ -299,9 +315,17 @@ def _start_job(url: str, saved: dict | None = None, parent: str | None = None,
             "error": None, "final_code": None, "code_model_calls": 0, "vision_calls": 0,
             "js_checked": False, "title": None,
             "models": {"code": config.CODE_MODEL, "vision": None}, "security": {"events": [], "benchmark": None},
+            "created_at": _now(), "finished_at": None,
         }
     threading.Thread(target=_run_job, args=(job_id, url, saved), daemon=True).start()
     return job_id
+
+
+def _registry_saved(url: str) -> dict | None:
+    """Intelligence registry fallback (survives restarts, unlike scrapers.py).
+    Registry versions have no scrape mode; they are treated as html scrapers."""
+    v = intel_hook.saved_scraper(url)
+    return {"code": v["code"], "mode": v.get("mode") or "html"} if v and v.get("code") else None
 
 
 @app.post("/api/jobs")
@@ -309,7 +333,7 @@ def create_job(body: JobIn):
     """New job. If a scraper is saved for this site (same key as rerun), try it first
     and repair it if it fails; only write one from scratch when none is saved."""
     _check_url(body.url)
-    return {"id": _start_job(body.url, saved=scrapers.get(body.url))}
+    return {"id": _start_job(body.url, saved=scrapers.get(body.url) or _registry_saved(body.url))}
 
 
 @app.post("/api/jobs/{job_id}/rerun")
@@ -320,7 +344,7 @@ def rerun_job(job_id: str, body: JobIn):
     parent = JOBS.get(job_id)
     if parent is None:
         raise HTTPException(404, "job not found")
-    saved = scrapers.get(body.url)
+    saved = scrapers.get(body.url) or _registry_saved(body.url)
     if not saved and parent.get("final_code"):
         saved = {"code": parent["final_code"], "mode": parent.get("scrape_mode", "html")}
     if not saved:
@@ -331,7 +355,7 @@ def rerun_job(job_id: str, body: JobIn):
 @app.post("/api/scrapers/reset")
 def reset_scrapers():
     """Forget all saved scrapers (start the demo clean)."""
-    return {"cleared": scrapers.reset()}
+    return {"cleared": scrapers.reset(), "retired_versions": intel_hook.on_reset()}
 
 
 @app.get("/api/scrapers")

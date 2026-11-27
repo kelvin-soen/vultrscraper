@@ -37,7 +37,9 @@ export function formatMoney(n, currency) {
   const code = (currency || "").toUpperCase();
   const frac = Number.isInteger(n) ? 0 : 2;
   if (code === "SEK" || code === "NOK" || code === "DKK") {
-    return `${nf(`kr${frac}`, { minimumFractionDigits: frac, maximumFractionDigits: frac }).format(n)} kr`;
+    // Nordic grouping with a (narrow) no-break space: 64 950 kr, matching the backend's text.
+    const t = nf(`kr${frac}`, { minimumFractionDigits: frac, maximumFractionDigits: frac }).format(n);
+    return `${t.replace(/,/g, "\u202f").replace(/\./g, ",")} kr`;
   }
   if (code) {
     try {
