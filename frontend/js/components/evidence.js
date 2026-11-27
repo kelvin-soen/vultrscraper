@@ -138,7 +138,9 @@ export function evidenceViewer(job, columns, primary) {
     h("p", { class: "evidence__verdict t-small" }, mark(setVerdict === "verified" ? "done" : setVerdict === "rejected" ? "failed" : "pending", { size: "sm" }), h("span", { text: verdictText })),
     finalAttempt?.reason && finalAttempt.reason !== "generated (not run yet)" ? h("p", { class: "evidence__reason t-small c-2", text: `“${finalAttempt.reason}”` }) : null,
     !evidence.hasBoxes && results.length
-      ? h("p", { class: "t-micro c-3", text: evidence.hasItemVerdicts ? "Region coordinates were not provided, so values can’t be pinned to locations in the screenshot." : "Verification was reported for the set as a whole. Region coordinates were not provided, so values can’t be pinned to locations in the screenshot." })
+      ? evidence.hasItemVerdicts
+        ? null
+        : h("p", { class: "t-micro c-3", text: "Verification was reported for the set as a whole." })
       : evidence.hasBoxes
         ? h("p", { class: "t-micro c-3", text: "Hover or select a record to locate it in the screenshot." })
         : null,

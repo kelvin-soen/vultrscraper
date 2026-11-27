@@ -544,7 +544,7 @@ export function deriveSecurity(raw, attempts) {
       const removed = attempts.filter((a) => a.sandbox && a.sandbox.container_removed === true);
       if (removed.length) {
         observed = true;
-        notes.unshift(`Container destroyed after ${removed.length === attempts.length ? "every" : removed.length} attempt${removed.length === 1 && attempts.length !== 1 ? "" : "s"}.`);
+        notes.unshift(removed.length === attempts.length ? "Container destroyed after every attempt." : `Container destroyed after ${removed.length} attempt${removed.length === 1 ? "" : "s"}.`);
       } else if (sandbox && sandbox.container_removed === true) {
         observed = true;
         notes.unshift("Container destroyed after execution.");
