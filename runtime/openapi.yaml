@@ -1,0 +1,853 @@
+openapi: 3.1.0
+info:
+  title: Vultr Agent Runtime
+  description: 'Secure sandbox runtime for backend AI agents. Executes generated Python
+    code and Playwright browser automation in disposable gVisor containers with default-deny
+    networking, an SSRF-filtering egress proxy, resource limits and verifiable telemetry.
+
+
+    Authenticate every request (except /health) with `Authorization: Bearer <api key>`.'
+  version: 1.0.0
+paths:
+  /health:
+    get:
+      tags:
+      - system
+      summary: Health
+      operationId: health_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /v1/jobs:
+    post:
+      tags:
+      - jobs
+      summary: Create Job
+      description: Queue a sandbox job. Returns immediately; poll `GET /v1/jobs/{id}`.
+      operationId: create_job_v1_jobs_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          type: string
+          title: Authorization
+      - name: x-api-key
+        in: header
+        required: false
+        schema:
+          type: string
+          title: X-Api-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobCreate'
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        '401':
+          description: Missing or invalid API key
+      security:
+      - bearerAuth: []
+  /v1/jobs/{job_id}:
+    get:
+      tags:
+      - jobs
+      summary: Get Job
+      operationId: get_job_v1_jobs__job_id__get
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Job Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          type: string
+          title: Authorization
+      - name: x-api-key
+        in: header
+        required: false
+        schema:
+          type: string
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        '401':
+          description: Missing or invalid API key
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - jobs
+      summary: Cancel Job
+      description: Cancel a queued or running job. The sandbox is killed and destroyed.
+      operationId: cancel_job_v1_jobs__job_id__delete
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Job Id
+      - name: purge
+        in: query
+        required: false
+        schema:
+          type: boolean
+          description: Also delete stored results/artifacts of a finished job.
+          default: false
+          title: Purge
+        description: Also delete stored results/artifacts of a finished job.
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          type: string
+          title: Authorization
+      - name: x-api-key
+        in: header
+        required: false
+        schema:
+          type: string
+          title: X-Api-Key
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        '401':
+          description: Missing or invalid API key
+      security:
+      - bearerAuth: []
+  /v1/jobs/{job_id}/result:
+    get:
+      tags:
+      - jobs
+      summary: Get Result
+      operationId: get_result_v1_jobs__job_id__result_get
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Job Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          type: string
+          title: Authorization
+      - name: x-api-key
+        in: header
+        required: false
+        schema:
+          type: string
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        '401':
+          description: Missing or invalid API key
+      security:
+      - bearerAuth: []
+  /v1/jobs/{job_id}/artifacts:
+    get:
+      tags:
+      - jobs
+      summary: List Artifacts
+      operationId: list_artifacts_v1_jobs__job_id__artifacts_get
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Job Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          type: string
+          title: Authorization
+      - name: x-api-key
+        in: header
+        required: false
+        schema:
+          type: string
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        '401':
+          description: Missing or invalid API key
+      security:
+      - bearerAuth: []
+  /v1/jobs/{job_id}/artifacts/{name}:
+    get:
+      tags:
+      - jobs
+      summary: Get Artifact
+      description: 'Download an artifact. Artifacts are untrusted sandbox output:
+        always served
+
+        as attachments with nosniff and a sandboxing CSP, never rendered inline.'
+      operationId: get_artifact_v1_jobs__job_id__artifacts__name__get
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Job Id
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Name
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          type: string
+          title: Authorization
+      - name: x-api-key
+        in: header
+        required: false
+        schema:
+          type: string
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        '401':
+          description: Missing or invalid API key
+      security:
+      - bearerAuth: []
+  /v1/profiles:
+    get:
+      tags:
+      - system
+      summary: Profiles
+      operationId: profiles_v1_profiles_get
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          type: string
+          title: Authorization
+      - name: x-api-key
+        in: header
+        required: false
+        schema:
+          type: string
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        '401':
+          description: Missing or invalid API key
+      security:
+      - bearerAuth: []
+  /v1/security/events:
+    get:
+      tags:
+      - security
+      summary: Security Events
+      description: Security events for the calling principal (policy violations, blocked
+        egress, timeouts, OOM, ...).
+      operationId: security_events_v1_security_events_get
+      parameters:
+      - name: since
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Since
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 1000
+          default: 200
+          title: Limit
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          type: string
+          title: Authorization
+      - name: x-api-key
+        in: header
+        required: false
+        schema:
+          type: string
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        '401':
+          description: Missing or invalid API key
+      security:
+      - bearerAuth: []
+  /v1/security/benchmark:
+    get:
+      tags:
+      - security
+      summary: Benchmark
+      description: Latest machine-readable security benchmark results produced on
+        this host.
+      operationId: benchmark_v1_security_benchmark_get
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          type: string
+          title: Authorization
+      - name: x-api-key
+        in: header
+        required: false
+        schema:
+          type: string
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        '401':
+          description: Missing or invalid API key
+      security:
+      - bearerAuth: []
+  /run:
+    post:
+      tags:
+      - compat
+      summary: Compat Run
+      description: 'Backend v0 contract: run generated code synchronously.
+
+        `network: true` uses the python-net profile (egress proxy, compat allowlist
+        + trusted demo targets).'
+      operationId: compat_run_run_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          type: string
+          title: Authorization
+      - name: x-api-key
+        in: header
+        required: false
+        schema:
+          type: string
+          title: X-Api-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        '401':
+          description: Missing or invalid API key
+      security:
+      - bearerAuth: []
+  /screenshot:
+    post:
+      tags:
+      - compat
+      summary: Compat Screenshot
+      description: 'Backend v0 contract: load a URL in the sandboxed browser, return
+        screenshot and HTML.'
+      operationId: compat_screenshot_screenshot_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          type: string
+          title: Authorization
+      - name: x-api-key
+        in: header
+        required: false
+        schema:
+          type: string
+          title: X-Api-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScreenshotRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        '401':
+          description: Missing or invalid API key
+      security:
+      - bearerAuth: []
+components:
+  schemas:
+    BrowserAction:
+      properties:
+        type:
+          type: string
+          maxLength: 40
+          title: Type
+        url:
+          anyOf:
+          - type: string
+            maxLength: 2048
+          - type: 'null'
+          title: Url
+        selector:
+          anyOf:
+          - type: string
+            maxLength: 1000
+          - type: 'null'
+          title: Selector
+        value:
+          anyOf:
+          - type: string
+            maxLength: 10000
+          - type: 'null'
+          title: Value
+        key:
+          anyOf:
+          - type: string
+            maxLength: 50
+          - type: 'null'
+          title: Key
+        attr:
+          anyOf:
+          - type: string
+            maxLength: 100
+          - type: 'null'
+          title: Attr
+        name:
+          anyOf:
+          - type: string
+            maxLength: 60
+          - type: 'null'
+          title: Name
+        all:
+          type: boolean
+          title: All
+          default: false
+        full_page:
+          type: boolean
+          title: Full Page
+          default: true
+        ms:
+          anyOf:
+          - type: integer
+            maximum: 30000.0
+            minimum: 0.0
+          - type: 'null'
+          title: Ms
+        y:
+          anyOf:
+          - type: integer
+            maximum: 100000.0
+            minimum: -100000.0
+          - type: 'null'
+          title: Y
+        timeout_ms:
+          anyOf:
+          - type: integer
+            maximum: 60000.0
+            minimum: 100.0
+          - type: 'null'
+          title: Timeout Ms
+      additionalProperties: false
+      type: object
+      required:
+      - type
+      title: BrowserAction
+    BrowserSpec:
+      properties:
+        url:
+          anyOf:
+          - type: string
+            maxLength: 2048
+          - type: 'null'
+          title: Url
+        html_content:
+          anyOf:
+          - type: string
+            maxLength: 512000
+          - type: 'null'
+          title: Html Content
+          description: Render this HTML instead of navigating.
+        actions:
+          items:
+            $ref: '#/components/schemas/BrowserAction'
+          type: array
+          maxItems: 50
+          title: Actions
+        screenshot:
+          type: boolean
+          title: Screenshot
+          default: true
+        full_page:
+          type: boolean
+          title: Full Page
+          default: true
+        capture_html:
+          type: boolean
+          title: Capture Html
+          default: true
+        wait_until:
+          type: string
+          enum:
+          - load
+          - domcontentloaded
+          - networkidle
+          - commit
+          title: Wait Until
+          default: load
+        viewport_width:
+          type: integer
+          maximum: 3840.0
+          minimum: 320.0
+          title: Viewport Width
+          default: 1366
+        viewport_height:
+          type: integer
+          maximum: 2160.0
+          minimum: 240.0
+          title: Viewport Height
+          default: 900
+        nav_timeout_ms:
+          type: integer
+          maximum: 60000.0
+          minimum: 1000.0
+          title: Nav Timeout Ms
+          default: 30000
+      additionalProperties: false
+      type: object
+      title: BrowserSpec
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    JobCreate:
+      properties:
+        profile:
+          type: string
+          enum:
+          - python
+          - python-net
+          - browser
+          title: Profile
+        code:
+          anyOf:
+          - type: string
+            maxLength: 100000
+          - type: 'null'
+          title: Code
+          description: Python source executed as main.py.
+        test_code:
+          anyOf:
+          - type: string
+            maxLength: 50000
+          - type: 'null'
+          title: Test Code
+          description: Optional pytest file run after the code.
+        inputs:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Inputs
+          description: JSON written to /work/input.json (max 256 KB).
+        browser:
+          anyOf:
+          - $ref: '#/components/schemas/BrowserSpec'
+          - type: 'null'
+        network:
+          anyOf:
+          - $ref: '#/components/schemas/NetworkPolicy'
+          - type: 'null'
+        permissions:
+          anyOf:
+          - $ref: '#/components/schemas/Permissions'
+          - type: 'null'
+        limits:
+          anyOf:
+          - $ref: '#/components/schemas/Limits'
+          - type: 'null'
+        metadata:
+          anyOf:
+          - additionalProperties:
+              type: string
+            type: object
+          - type: 'null'
+          title: Metadata
+          description: Opaque caller tags (max 20 keys).
+      additionalProperties: false
+      type: object
+      required:
+      - profile
+      title: JobCreate
+    Limits:
+      properties:
+        timeout_s:
+          anyOf:
+          - type: integer
+            maximum: 600.0
+            minimum: 1.0
+          - type: 'null'
+          title: Timeout S
+          description: Wall-clock limit; capped by the profile maximum.
+        memory_mb:
+          anyOf:
+          - type: integer
+            maximum: 4096.0
+            minimum: 64.0
+          - type: 'null'
+          title: Memory Mb
+          description: May only lower the profile limit.
+        cpus:
+          anyOf:
+          - type: number
+            maximum: 4.0
+            exclusiveMinimum: 0.0
+          - type: 'null'
+          title: Cpus
+          description: May only lower the profile limit.
+        max_output_kb:
+          anyOf:
+          - type: integer
+            maximum: 4096.0
+            minimum: 1.0
+          - type: 'null'
+          title: Max Output Kb
+          description: Cap for returned stdout/stderr each.
+      additionalProperties: false
+      type: object
+      title: Limits
+    NetworkPolicy:
+      properties:
+        allowed_domains:
+          items:
+            type: string
+          type: array
+          maxItems: 50
+          title: Allowed Domains
+          description: Exact hosts, "*.example.com" for subdomains, or "*" for any
+            public host.
+        allow_trusted_targets:
+          type: boolean
+          title: Allow Trusted Targets
+          description: Allow operator-pinned internal targets (e.g. the demo site).
+          default: false
+      additionalProperties: false
+      type: object
+      title: NetworkPolicy
+    Permissions:
+      properties:
+        allowed_actions:
+          anyOf:
+          - items:
+              type: string
+            type: array
+            maxItems: 20
+          - type: 'null'
+          title: Allowed Actions
+          description: Browser tools this job may use (subset of the known actions).
+      additionalProperties: false
+      type: object
+      title: Permissions
+    RunRequest:
+      properties:
+        code:
+          type: string
+          maxLength: 100000
+          title: Code
+        timeout:
+          type: integer
+          maximum: 120.0
+          minimum: 1.0
+          title: Timeout
+          default: 30
+        network:
+          type: boolean
+          title: Network
+          default: true
+      additionalProperties: false
+      type: object
+      required:
+      - code
+      title: RunRequest
+      description: Compatibility contract used by the backend (POST /run).
+    ScreenshotRequest:
+      properties:
+        url:
+          type: string
+          maxLength: 2048
+          title: Url
+        full_page:
+          type: boolean
+          title: Full Page
+          default: true
+        timeout:
+          type: integer
+          maximum: 180.0
+          minimum: 5.0
+          title: Timeout
+          default: 60
+      additionalProperties: false
+      type: object
+      required:
+      - url
+      title: ScreenshotRequest
+      description: Compatibility contract used by the backend (POST /screenshot).
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
