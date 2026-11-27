@@ -2,9 +2,10 @@
 
 export function formatDuration(ms) {
   if (ms == null || !Number.isFinite(ms)) return "—";
-  if (ms < 1000) return `${Math.round(ms)} ms`;
+  // no-break spaces: "9.1 s" must never wrap between number and unit
+  if (ms < 1000) return `${Math.round(ms)}\u00a0ms`;
   const s = ms / 1000;
-  if (s < 60) return `${s < 10 ? s.toFixed(1) : Math.round(s)} s`;
+  if (s < 60) return `${s < 10 ? s.toFixed(1) : Math.round(s)}\u00a0s`;
   const m = Math.floor(s / 60);
   const rem = Math.round(s % 60);
   return `${m}m ${String(rem).padStart(2, "0")}s`;

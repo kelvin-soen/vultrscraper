@@ -87,7 +87,8 @@ Local frontend against the live backend: `python3 frontend/dev/proxy.py --backen
 5. **Timestamps.** `created_at`/`finished_at` exist only with this branch's backend. Against the current live server (main) the UI shows times observed by the browser and says so (tooltip, JSON `times_observed_by: "browser"`).
 6. **Intelligence layer.** Merged here but not running on the VM. Until the backend is restarted from this branch, the report uses `fallbackViews` ("Plausibility analysis: not available on this backend") and the comparison comes from this browser's saved copies.
 7. **Favicons.** Loaded straight from the scraped site's `/favicon.ico` (no third-party service), with the page-title initial as fallback. The backend could return the page's `<link rel=icon>` from the screenshot HTML for better coverage.
-8. **Anomaly demo** (`/shop?v=anomaly`) needs the shop restarted from this branch's `demo-site/server.py` (see `INTEGRATION_HANDOFF.md` §8).
+8. **Unreachable sites don't fail fast.** For a domain that doesn't resolve, the runtime's `/screenshot` returns the browser's error page as if it were content. The backend then spends 3 code-model attempts (~3.5 min) on it before failing with "no working scraper after 3 attempts". The UI reports this honestly (repair stages, then "Extraction failed"), but `sandbox_client.screenshot` should treat a navigation error / non-2xx `status` as `could not load page` up front.
+9. **Anomaly demo** (`/shop?v=anomaly`) needs the shop restarted from this branch's `demo-site/server.py` (see `INTEGRATION_HANDOFF.md` §8).
 
 ## 6. Privacy and security notes
 

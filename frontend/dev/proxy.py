@@ -34,13 +34,18 @@ def make_handler(backend: str):
             req = urllib.request.Request(backend + self.path, data=body, method=method,
                                          headers={"Content-Type": "application/json",
                                                   "Accept": "application/json"})
-            try:
-                with urllib.request.urlopen(req, timeout=30) as r:
-                    status, data = r.status, r.read()
-            except urllib.error.HTTPError as e:
-                status, data = e.code, e.read()
-            except Exception as e:  # backend down: report as 502, like a real proxy
-                status, data = 502, ('{"detail": "backend unreachable: %s"}' % type(e).__name__).encode()
+            status, data = 502, b'{"detail": "backend unreachable"}'
+            for attempt in range(2 if method == "GET" else 1):  # one retry for idempotent GETs
+                try:
+                    with urllib.request.urlopen(req, timeout=30) as r:
+                        status, data = r.status, r.read()
+                    break
+                except urllib.error.HTTPError as e:
+                    status, data = e.code, e.read()
+                    break
+                except Exception as e:  # backend unreachable: report as 502, like a real proxy
+                    print(f"proxy: {method} {self.path} failed ({type(e).__name__}: {e})", flush=True)
+                    status, data = 502, ('{"detail": "backend unreachable: %s"}' % type(e).__name__).encode()
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(data)))
