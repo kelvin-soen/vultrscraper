@@ -160,23 +160,39 @@ def _run_job(job_id: str, url: str, saved_code: str | None = None) -> None:
         # After this job's own events, so a real "blocked"/"detected" decides the UI status.
         job["security"]["events"].extend(_benchmark_events(bench))
 
-        source, retarget_error = "generated", None
+        code, retarget_error = None, None
         if saved_code is not None:
-            source = "saved"
             try:
                 code = scrapers.set_url(saved_code, url)
             except ValueError as e:
                 code, retarget_error = saved_code, str(e)
-        else:
-            job["code_model_calls"] += 1
-            code = ai_client.write_scraper(url, html)
+        prev = None  # last failed attempt that had code: input for the repair prompt
 
         for n in range(1, config.MAX_ATTEMPTS + 1):
-            attempt = {"n": n, "source": source, "code": code, "stdout": "", "stderr": "",
-                       "exit_code": None, "verdict": "running", "reason": "running in sandbox",
+            if code is not None:
+                source = "saved" if (saved_code is not None and n == 1) else "repaired"
+            else:
+                source = "generated" if prev is None else "repaired"
+            attempt = {"n": n, "source": source, "code": code or "", "stdout": "", "stderr": "",
+                       "exit_code": None, "verdict": "running",
+                       "reason": "running in sandbox" if code else
+                                 ("generating scraper" if prev is None else "repairing scraper"),
                        "timed_out": None, "duration_ms": None, "runtime_job_id": None,
                        "sandbox": None}
             job["attempts"].append(attempt)
+
+            if code is None:  # ask the code model; a slow/failed call fails only this attempt
+                job["code_model_calls"] += 1
+                try:
+                    if prev is None:
+                        code = ai_client.write_scraper(url, html)
+                    else:
+                        code = ai_client.fix_scraper(url, html, prev["code"], prev["reason"],
+                                                     prev["stderr"], prev["stdout"])
+                except ai_client.AIError as e:
+                    attempt.update(verdict="fail", reason=f"AI code model failed: {e}")
+                    continue
+                attempt.update(code=code, reason="running in sandbox")
 
             if retarget_error:  # can't safely point it at the new URL: don't run it
                 ok, verdict, reason, items = False, "fail", retarget_error, []
@@ -198,11 +214,9 @@ def _run_job(job_id: str, url: str, saved_code: str | None = None) -> None:
                 scrapers.save(url, code)
                 job.update(results=items, final_code=code, status="done")
                 return
-            if n < config.MAX_ATTEMPTS:
-                job["code_model_calls"] += 1
-                code = ai_client.fix_scraper(url, html, code, reason,
-                                             attempt["stderr"], attempt["stdout"])
-                source = "repaired"
+            prev = {"code": code, "reason": reason,
+                    "stderr": attempt["stderr"], "stdout": attempt["stdout"]}
+            code = None
 
         job["status"] = "failed"
         job["error"] = f"no working scraper after {config.MAX_ATTEMPTS} attempts"

@@ -13,6 +13,8 @@ CODE_MODEL = "glm-5.3"
 VISION_MODEL = "nemotron-3-nano-omni-30b-a3b-reasoning"
 CODE_MAX_TOKENS = 16000  # reasoning model: must be >= 4000
 VISION_MAX_TOKENS = 16000
+AI_TIMEOUT_S = 120  # hard limit per AI call (incl. one retry on empty content)
+AI_HTML_CHARS = 60000  # page HTML sent to the code model, after cleaning
 
 SANDBOX_URL = os.getenv("SANDBOX_URL", "http://localhost:8001")
 MOCK_SANDBOX = os.getenv("MOCK_SANDBOX", "0") == "1"
