@@ -1,0 +1,12 @@
+[
+  {"id": 1,  "name": "Stealth 2 Driver",          "brand": "TaylorMade", "category": "Driver",       "price_sek": 6495},
+  {"id": 2,  "name": "Paradym Ai Smoke Driver",   "brand": "Callaway",   "category": "Driver",       "price_sek": 7495},
+  {"id": 3,  "name": "G430 Max Fairway Wood",     "brand": "Ping",       "category": "Fairway Wood", "price_sek": 4295},
+  {"id": 4,  "name": "TSR2 Hybrid",               "brand": "Titleist",   "category": "Hybrid",       "price_sek": 3495},
+  {"id": 5,  "name": "P790 Iron Set (5-PW)",      "brand": "TaylorMade", "category": "Iron Set",     "price_sek": 11995},
+  {"id": 6,  "name": "Apex Pro Iron Set (4-PW)",  "brand": "Callaway",   "category": "Iron Set",     "price_sek": 10995},
+  {"id": 7,  "name": "Vokey SM10 Wedge",          "brand": "Titleist",   "category": "Wedge",        "price_sek": 2195},
+  {"id": 8,  "name": "RTX 6 ZipCore Wedge",       "brand": "Cleveland",  "category": "Wedge",        "price_sek": 2095},
+  {"id": 9,  "name": "Phantom 5.5 Putter",        "brand": "Scotty Cameron", "category": "Putter",   "price_sek": 5995},
+  {"id": 10, "name": "Spider Tour X Putter",      "brand": "TaylorMade", "category": "Putter",       "price_sek": 4495}
+]
