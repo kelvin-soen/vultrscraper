@@ -31,7 +31,7 @@ class JobIn(BaseModel):
 
 
 EMPTY_REASON = "scraper returned an empty list (no products found)"
-JS_PAGE_MESSAGE = ("This site loads its products with JavaScript. Sift currently scrapes HTML "
+JS_PAGE_MESSAGE = ("This site loads its products with JavaScript. siftform. currently scrapes HTML "
                    "pages; browser-based scraping is the next step.")
 
 
