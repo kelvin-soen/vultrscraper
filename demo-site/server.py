@@ -70,9 +70,8 @@ GRID_CSS = BASE_CSS + """
   .amount { display: block; margin-top: 16px; font-size: 34px; font-weight: 800;
             color: #0e2a47; white-space: nowrap; }
   .sku-tile.on-sale .amount { color: #c0141b; }
-  .was-amount { display: block; font-size: 18px; color: #888; text-decoration: line-through; }
   .sale-flag { position: absolute; top: 14px; right: 14px; background: #c0141b; color: #fff;
-               font-weight: 800; font-size: 14px; padding: 4px 10px; border-radius: 6px; }
+               font-weight: 700; font-size: 12px; padding: 2px 8px; border-radius: 4px; letter-spacing: .05em; }
 """
 
 
@@ -123,11 +122,10 @@ def render_grid(products):
         sale = SALE_PRICES.get(p["id"])
         if sale is not None:
             tiles.append(f"""  <article class="sku-tile on-sale" data-sku="BB-{p['id']:03d}">
-    <span class="sale-flag">REA</span>
+    <span class="sale-flag">SALE</span>
     <h2 class="tile-title">{e(p['name'])}</h2>
     <div class="tile-maker">{e(p['brand'])}</div>
     <span class="tile-kind">{e(p['category'])}</span>
-    <span class="was-amount">{fmt_sek(p['price_sek'])}</span>
     <span class="amount">{fmt_sek(sale)}</span>
   </article>""")
         else:
