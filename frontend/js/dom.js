@@ -92,6 +92,42 @@ export function icon(name, { size = 16, label } = {}) {
   return svg;
 }
 
+/* ---- brand mark -------------------------------------------------------- */
+/*
+ * siftform. mark: a rounded isometric cube, three visible faces in one tone.
+ * 32px grid. The silhouette is a pointy-top hexagon with rounded outer
+ * corners; the faces are plain rhombi clipped to it, so the inner edges stay
+ * crisp. Face tones come from --c-mark-* tokens (light and dark). icon.svg
+ * uses the same geometry.
+ */
+const MARK = {
+  outline:
+    "M13.06 3.2Q16 1.5 18.94 3.2L25.61 7.05Q28.56 8.75 28.56 12.15L28.56 19.85Q28.56 23.25 25.61 24.95L18.94 28.8Q16 30.5 13.06 28.8L6.39 24.95Q3.44 23.25 3.44 19.85L3.44 12.15Q3.44 8.75 6.39 7.05Z",
+  top: "M16 1.5L28.56 8.75L16 16L3.44 8.75Z",
+  left: "M3.44 8.75L16 16L16 30.5L3.44 23.25Z",
+  right: "M16 16L28.56 8.75L28.56 23.25L16 30.5Z",
+};
+
+let markSeq = 0;
+
+export function brandMark({ className = "wordmark__glyph" } = {}) {
+  const svgEl = (tag, attrs) => {
+    const el = document.createElementNS(SVG_NS, tag);
+    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+    return el;
+  };
+  const clipId = `sf-mark-${++markSeq}`;
+  const svg = svgEl("svg", { viewBox: "0 0 32 32", class: className, "aria-hidden": "true", focusable: "false" });
+  const clip = svgEl("clipPath", { id: clipId });
+  clip.append(svgEl("path", { d: MARK.outline }));
+  const faces = svgEl("g", { "clip-path": `url(#${clipId})` });
+  for (const face of ["top", "left", "right"]) {
+    faces.append(svgEl("path", { d: MARK[face], class: `wordmark__${face}` }));
+  }
+  svg.append(clip, faces);
+  return svg;
+}
+
 /* ---- motion helpers ---------------------------------------------------- */
 
 export const prefersReducedMotion = () =>

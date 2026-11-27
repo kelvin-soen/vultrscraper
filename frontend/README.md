@@ -11,7 +11,7 @@ FastAPI backend from this folder. No build step.
 
 One continuous page with three states:
 
-1. **Input**: a wordmark, a one-line promise and a single URL field.
+1. **Input**: the siftform. wordmark, a one-line promise and a single URL field.
    Validation is inline, Enter submits, and quick links fill the demo shop URLs.
 2. **Live run**: a stage timeline derived from real job data, the screenshot
    once captured, a findings preview from scraper output, and attempt cards
@@ -57,4 +57,4 @@ interpretation of backend data lives in `js/model/job.js`.
   `--art-*` tokens, so generative or dithered visuals can be added later
   without touching components.
 
-The wordmark (`sift`) is a placeholder and can be changed in `js/config.js`.
+The product is **siftform.** (always lowercase, with the period). The name lives in `js/config.js`. The mark is a rounded isometric cube with three faces in one tone (`--c-mark-*` tokens), drawn by `brandMark()` in `js/dom.js`; `icon.svg` is the same geometry for the favicon.

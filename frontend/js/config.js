@@ -1,6 +1,6 @@
-/** Product-level constants. Change the wordmark here only. */
+/** Product-level constants. Change the wordmark here only (the mark itself is brandMark() in dom.js). */
 export const BRAND = {
-  name: "sift",
+  name: "siftform.",
   tagline: "Structured data from any website",
 };
 

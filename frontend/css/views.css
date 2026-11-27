@@ -42,24 +42,16 @@ body:not([data-view="home"]) .topbar { border-bottom-color: var(--c-border); }
   border-radius: var(--radius-sm);
 }
 .wordmark__glyph {
-  position: relative;
-  width: 1.125rem;
-  height: 1.125rem;
-  border-radius: 6px;
-  background: var(--c-inverse);
-}
-.wordmark__glyph::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  width: 0.375rem;
-  height: 0.375rem;
-  border-radius: 50%;
-  background: var(--c-on-inverse);
+  display: block;
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
   transition: transform var(--dur-slow) var(--ease-out);
 }
-.wordmark:hover .wordmark__glyph::after { transform: scale(1.35); }
+.wordmark__top { fill: var(--c-mark-top); }
+.wordmark__left { fill: var(--c-mark-left); }
+.wordmark__right { fill: var(--c-mark-right); }
+.wordmark:hover .wordmark__glyph { transform: translateY(-1px); }
 
 .main {
   flex: 1;
