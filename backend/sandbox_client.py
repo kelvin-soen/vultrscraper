@@ -3,39 +3,78 @@
     run(code, timeout=30) -> {"stdout", "stderr", "exit_code", "timed_out", "duration_ms"}
     screenshot(url)       -> {"image_base64", "html", "status"}
 
-Set MOCK_SANDBOX=1 to use the mock (never executes code).
+Set MOCK_SANDBOX=1 to use the mock (it never executes code).
+Mock behaviour: for each target URL found in the code, runs alternate
+fail (Python traceback) -> success (valid JSON). So a fresh job sees
+attempt 1 fail and attempt 2 succeed.
 """
+import base64
+import json
+import re
+import threading
+from pathlib import Path
+
 import httpx
 
 import config
 
-# 1x1 transparent PNG
-_MOCK_PNG = (
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+# ---------- mock ----------
+MOCK_PRODUCTS = [
+    {"name": "Kaffe Mellanrost 500g", "price_sek": 79},
+    {"name": "Mjölk 1,5 l", "price_sek": 18},
+    {"name": "Surdegsbröd", "price_sek": 45},
+    {"name": "Smör 500g", "price_sek": 62},
+    {"name": "Ägg 12-pack", "price_sek": 49},
+    {"name": "Lagrad ost 1 kg", "price_sek": 129},
+    {"name": "Havregryn 1,5 kg", "price_sek": 32},
+    {"name": "Lingonsylt 400g", "price_sek": 38},
+]
+
+_MOCK_PNG_PATH = Path(__file__).resolve().parent / "mock_assets" / "shop.png"
+
+_MOCK_HTML = (
+    "<!doctype html><html lang=\"sv\"><head><title>Demo Shop</title></head><body>\n"
+    "<header class=\"top\"><h1>Demo Shop</h1><a class=\"cart\">Varukorg (0)</a></header>\n"
+    "<main><h2>Veckans erbjudanden</h2>\n<div class=\"grid\">\n"
+    + "".join(
+        f"  <div class=\"card\"><img src=\"/img/{i}.jpg\" alt=\"\">"
+        f"<h3 class=\"card-title\">{p['name']}</h3>"
+        f"<div class=\"card-price\"><span class=\"amount\">{p['price_sek']}</span> kr</div>"
+        f"<button>Köp</button></div>\n"
+        for i, p in enumerate(MOCK_PRODUCTS)
+    )
+    + "</div></main></body></html>"
 )
 
-_MOCK_HTML = """<!doctype html><html><body><h1>Demo Shop</h1>
-<ul class="products">
-  <li class="product"><span class="name">Kaffe 500g</span><span class="price">79 kr</span></li>
-  <li class="product"><span class="name">Mjolk 1l</span><span class="price">18 kr</span></li>
-  <li class="product"><span class="name">Brod</span><span class="price">35 kr</span></li>
-</ul></body></html>"""
+_MOCK_TRACEBACK = """Traceback (most recent call last):
+  File "/sandbox/scraper.py", line 41, in <module>
+    main()
+  File "/sandbox/scraper.py", line 29, in main
+    name = li.select_one(".name").get_text(strip=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'get_text'
+"""
+
+_mock_counts: dict[str, int] = {}
+_mock_lock = threading.Lock()
 
 
-# ---------- mock ----------
 def _mock_run(code: str, timeout: int = 30) -> dict:
-    return {
-        "stdout": '[{"name": "Kaffe 500g", "price_sek": 79}, {"name": "Mjolk 1l", "price_sek": 18}, '
-                  '{"name": "Brod", "price_sek": 35}]',
-        "stderr": "",
-        "exit_code": 0,
-        "timed_out": False,
-        "duration_ms": 5,
-    }
+    m = re.search(r"https?://[^\s\"']+", code)
+    key = m.group(0) if m else ""
+    with _mock_lock:
+        _mock_counts[key] = _mock_counts.get(key, 0) + 1
+        n = _mock_counts[key]
+    if n % 2 == 1:
+        return {"stdout": "", "stderr": _MOCK_TRACEBACK, "exit_code": 1,
+                "timed_out": False, "duration_ms": 412}
+    return {"stdout": json.dumps(MOCK_PRODUCTS, ensure_ascii=False) + "\n", "stderr": "",
+            "exit_code": 0, "timed_out": False, "duration_ms": 538}
 
 
 def _mock_screenshot(url: str) -> dict:
-    return {"image_base64": _MOCK_PNG, "html": _MOCK_HTML, "status": 200}
+    img = base64.b64encode(_MOCK_PNG_PATH.read_bytes()).decode()
+    return {"image_base64": img, "html": _MOCK_HTML, "status": 200}
 
 
 # ---------- real ----------

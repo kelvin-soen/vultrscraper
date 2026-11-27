@@ -8,8 +8,11 @@ load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 VULTR_BASE_URL = "https://api.vultrinference.com/v1"
 CODE_MODEL = "glm-5.3"
-VISION_MODEL = "clef-omni"  # untested; fallback: nemotron-3-nano-omni-30b-a3b-reasoning
+# Tested 2026-11-27: nemotron reads image text correctly. clef-omni rejects chat
+# completions ("decision model; use /v1/systemone").
+VISION_MODEL = "nemotron-3-nano-omni-30b-a3b-reasoning"
 CODE_MAX_TOKENS = 8000  # reasoning model: must be >= 4000
+VISION_MAX_TOKENS = 8000
 
 SANDBOX_URL = os.getenv("SANDBOX_URL", "http://localhost:8001")
 MOCK_SANDBOX = os.getenv("MOCK_SANDBOX", "0") == "1"
