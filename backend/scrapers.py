@@ -5,7 +5,7 @@ import threading
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
-_SAVED: dict[str, str] = {}
+_SAVED: dict[str, dict] = {}
 _lock = threading.Lock()
 
 # Generated scrapers must define the target as `URL = "..."` on its own line.
@@ -17,14 +17,22 @@ def site_key(url: str) -> str:
     return urlunsplit((p.scheme, p.netloc, p.path, "", ""))
 
 
-def save(url: str, code: str) -> None:
+def save(url: str, code: str, mode: str = "html") -> None:
+    """mode: "html" (scraper fetches the page) or "rendered" (scraper parses PAGE_HTML)."""
     with _lock:
-        _SAVED[site_key(url)] = code
+        _SAVED[site_key(url)] = {"code": code, "mode": mode}
 
 
-def get(url: str) -> str | None:
+def get(url: str) -> dict | None:
+    """{"code", "mode"} or None."""
     with _lock:
-        return _SAVED.get(site_key(url))
+        entry = _SAVED.get(site_key(url))
+        return dict(entry) if entry else None
+
+
+def all_modes() -> dict[str, str]:
+    with _lock:
+        return {k: v["mode"] for k, v in sorted(_SAVED.items())}
 
 
 # Saved scrapers live in memory only. reset() also removes this file in case

@@ -16,6 +16,7 @@ from pydantic import BaseModel
 import ai_client
 import config
 import sandbox_client
+import rendered
 import scrapers
 import verify
 
@@ -161,9 +162,16 @@ def _benchmark_events(bench: dict | None) -> list[dict]:
     return events
 
 
-def _run_job(job_id: str, url: str, saved_code: str | None = None) -> None:
-    """Run the scrape loop. With `saved_code`, attempt 1 reuses it (no code-model call)."""
+RENDERED_PREFIX = "rendered mode (parsed the browser-rendered page, no network): "
+
+
+def _run_job(job_id: str, url: str, saved: dict | None = None) -> None:
+    """Run the scrape loop. With `saved` ({"code", "mode"}), attempt 1 reuses that scraper
+    (no code-model call). mode "html": the scraper fetches the page itself. mode "rendered":
+    the scraper parses PAGE_HTML, the browser-rendered page embedded by rendered.py."""
     job = JOBS[job_id]
+    saved_code = saved["code"] if saved else None
+    mode = saved["mode"] if saved else "html"
     try:
         shot = sandbox_client.screenshot(url)
         job["security"]["events"].extend(_blocked_to_events(shot.get("blocked_requests") or []))
@@ -183,7 +191,9 @@ def _run_job(job_id: str, url: str, saved_code: str | None = None) -> None:
             try:
                 code = scrapers.set_url(saved_code, url)
             except ValueError as e:
-                code, retarget_error = saved_code, str(e)
+                code = saved_code
+                if mode == "html":  # rendered scrapers never fetch URL, so no retarget needed
+                    retarget_error = str(e)
         prev = None  # last failed attempt that had code: input for the repair prompt
 
         for n in range(1, config.MAX_ATTEMPTS + 1):
@@ -196,46 +206,65 @@ def _run_job(job_id: str, url: str, saved_code: str | None = None) -> None:
                        "reason": "running in sandbox" if code else
                                  ("generating scraper" if prev is None else "repairing scraper"),
                        "timed_out": None, "duration_ms": None, "runtime_job_id": None,
-                       "sandbox": None}
+                       "sandbox": None, "scrape_mode": mode}
             job["attempts"].append(attempt)
 
             if code is None:  # ask the code model; a slow/failed call fails only this attempt
                 job["code_model_calls"] += 1
                 try:
                     if prev is None:
-                        code = ai_client.write_scraper(url, html)
+                        code = ai_client.write_scraper(url, html, mode)
                     else:
                         code = ai_client.fix_scraper(url, html, prev["code"], prev["reason"],
-                                                     prev["stderr"], prev["stdout"])
+                                                     prev["stderr"], prev["stdout"], mode)
                 except ai_client.AIError as e:
                     attempt.update(verdict="fail", reason=f"AI code model failed: {e}")
                     continue
                 attempt.update(code=code, reason="running in sandbox")
 
-            if retarget_error:  # can't safely point it at the new URL: don't run it
-                ok, verdict, reason, items = False, "fail", retarget_error, []
+            run_code, build_error = code, None
+            if mode == "rendered":  # wrapper defining PAGE_HTML + the AI's code (not stored)
+                try:
+                    run_code, _info = rendered.build_run_code(code, html)
+                except ValueError as e:
+                    build_error = f"rendered mode: {e}"
+
+            if retarget_error or build_error:  # can't run it safely/at all
+                ok, verdict, reason, items = False, "fail", retarget_error or build_error, []
                 retarget_error = None
             else:
-                res = sandbox_client.run(code, timeout=RUN_TIMEOUT_S)
+                res = sandbox_client.run(run_code, timeout=RUN_TIMEOUT_S,
+                                         network=(mode == "html"))
                 attempt.update(stdout=res.get("stdout", ""), stderr=res.get("stderr", ""),
                                exit_code=res.get("exit_code"), timed_out=res.get("timed_out"),
                                duration_ms=res.get("duration_ms"),
                                runtime_job_id=res.get("job_id"),
-                               sandbox=sandbox_client.sandbox_info(res, RUN_TIMEOUT_S))
+                               sandbox=sandbox_client.sandbox_info(res, RUN_TIMEOUT_S,
+                                                                   network=(mode == "html")))
                 attempt["reason"] = "checking output"
                 ok, verdict, reason, items = _check_attempt(job, res, html)
             if ok and source == "saved":
                 reason = "saved scraper, still works; " + reason
+            if mode == "rendered" and not reason.startswith("rendered mode"):
+                reason = RENDERED_PREFIX + reason
             attempt.update(verdict=verdict, reason=reason)
 
             if ok:
-                scrapers.save(url, code)
+                scrapers.save(url, code, mode)
                 job.update(results=items, final_code=code, status="done")
                 return
-            if reason == EMPTY_REASON and not job.get("js_checked"):
+            if mode == "html" and reason == EMPTY_REASON and not job.get("js_checked"):
                 job["js_checked"] = True
                 why = _js_rendered(url, html)
-                if why:  # no requests-based scraper can work here: stop, don't burn AI calls
+                if why and n < config.MAX_ATTEMPTS:
+                    # A fetching scraper can't see these products: write a new one that
+                    # parses the browser-rendered page instead (fresh, not a repair).
+                    attempt["reason"] = (f"This site loads its products with JavaScript ({why}); "
+                                         "switching to rendered mode.")
+                    mode = job["scrape_mode"] = "rendered"
+                    prev, code = None, None
+                    continue
+                if why:  # no attempts left to switch
                     attempt["reason"] = f"{JS_PAGE_MESSAGE} ({why})"
                     job.update(status="failed", error=JS_PAGE_MESSAGE)
                     return
@@ -256,16 +285,17 @@ def _check_url(url: str) -> None:
         raise HTTPException(400, "url must start with http:// or https://")
 
 
-def _start_job(url: str, saved_code: str | None = None, parent: str | None = None) -> str:
+def _start_job(url: str, saved: dict | None = None, parent: str | None = None) -> str:
     job_id = uuid.uuid4().hex[:12]
     with _lock:
         JOBS[job_id] = {
-            "status": "running", "url": url, "mode": "rerun" if saved_code else "new",
+            "status": "running", "url": url, "mode": "rerun" if saved else "new",
+            "scrape_mode": saved["mode"] if saved else "html",
             "parent": parent, "attempts": [], "results": [], "screenshot_base64": None,
             "error": None, "final_code": None, "code_model_calls": 0, "vision_calls": 0,
             "js_checked": False, "title": None, "security": {"events": [], "benchmark": None},
         }
-    threading.Thread(target=_run_job, args=(job_id, url, saved_code), daemon=True).start()
+    threading.Thread(target=_run_job, args=(job_id, url, saved), daemon=True).start()
     return job_id
 
 
@@ -283,10 +313,12 @@ def rerun_job(job_id: str, body: JobIn):
     parent = JOBS.get(job_id)
     if parent is None:
         raise HTTPException(404, "job not found")
-    saved = scrapers.get(body.url) or parent.get("final_code")
+    saved = scrapers.get(body.url)
+    if not saved and parent.get("final_code"):
+        saved = {"code": parent["final_code"], "mode": parent.get("scrape_mode", "html")}
     if not saved:
         raise HTTPException(409, "no saved scraper for this site yet; run a normal job first")
-    return {"id": _start_job(body.url, saved_code=saved, parent=job_id)}
+    return {"id": _start_job(body.url, saved=saved, parent=job_id)}
 
 
 @app.post("/api/scrapers/reset")
@@ -297,7 +329,7 @@ def reset_scrapers():
 
 @app.get("/api/scrapers")
 def list_scrapers():
-    return {"sites": scrapers.all_keys()}
+    return {"sites": scrapers.all_keys(), "modes": scrapers.all_modes()}
 
 
 @app.get("/api/jobs/{job_id}")
