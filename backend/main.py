@@ -287,11 +287,13 @@ def _check_url(url: str) -> None:
         raise HTTPException(400, "url must start with http:// or https://")
 
 
-def _start_job(url: str, saved: dict | None = None, parent: str | None = None) -> str:
+def _start_job(url: str, saved: dict | None = None, parent: str | None = None,
+               kind: str = "new") -> str:
+    """kind: "new" (POST /api/jobs) or "rerun". Both start from `saved` when given."""
     job_id = uuid.uuid4().hex[:12]
     with _lock:
         JOBS[job_id] = {
-            "status": "running", "url": url, "mode": "rerun" if saved else "new",
+            "status": "running", "url": url, "mode": kind,
             "scrape_mode": saved["mode"] if saved else "html",
             "parent": parent, "attempts": [], "results": [], "screenshot_base64": None,
             "error": None, "final_code": None, "code_model_calls": 0, "vision_calls": 0,
@@ -304,8 +306,10 @@ def _start_job(url: str, saved: dict | None = None, parent: str | None = None) -
 
 @app.post("/api/jobs")
 def create_job(body: JobIn):
+    """New job. If a scraper is saved for this site (same key as rerun), try it first
+    and repair it if it fails; only write one from scratch when none is saved."""
     _check_url(body.url)
-    return {"id": _start_job(body.url)}
+    return {"id": _start_job(body.url, saved=scrapers.get(body.url))}
 
 
 @app.post("/api/jobs/{job_id}/rerun")
@@ -321,7 +325,7 @@ def rerun_job(job_id: str, body: JobIn):
         saved = {"code": parent["final_code"], "mode": parent.get("scrape_mode", "html")}
     if not saved:
         raise HTTPException(409, "no saved scraper for this site yet; run a normal job first")
-    return {"id": _start_job(body.url, saved=saved, parent=job_id)}
+    return {"id": _start_job(body.url, saved=saved, parent=job_id, kind="rerun")}
 
 
 @app.post("/api/scrapers/reset")
