@@ -1,0 +1,163 @@
+/* ==========================================================================
+   Design tokens
+   Single source of truth for the visual system. Components never use raw
+   values; they reference these custom properties. A future "art layer"
+   (generative graphics, dithering, editorial visuals) hooks in through the
+   --art-* tokens and the .art-layer slot without touching components.
+   ========================================================================== */
+
+:root {
+  /* ---- Typography ------------------------------------------------------ */
+  --font-sans: "Geist", "Inter var", "Inter", ui-sans-serif, -apple-system, BlinkMacSystemFont,
+    "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Geist", "Inter Display", "Inter var", ui-sans-serif, -apple-system,
+    BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  /* Type scale (px → rem at 16px root) */
+  --text-2xs: 0.6875rem;  /* 11 */
+  --text-xs: 0.75rem;     /* 12 */
+  --text-sm: 0.8125rem;   /* 13 */
+  --text-base: 0.9375rem; /* 15 */
+  --text-md: 1.0625rem;   /* 17 */
+  --text-lg: 1.25rem;     /* 20 */
+  --text-xl: 1.5rem;      /* 24 */
+  --text-2xl: 2rem;       /* 32 */
+  --text-3xl: 2.75rem;    /* 44 */
+  --text-4xl: 3.75rem;    /* 60 */
+
+  --leading-tight: 1.1;
+  --leading-snug: 1.3;
+  --leading-normal: 1.55;
+
+  --tracking-display: -0.035em;
+  --tracking-tight: -0.015em;
+  --tracking-wide: 0.06em;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* ---- Spacing (4px grid) --------------------------------------------- */
+  --space-0: 0;
+  --space-1: 0.25rem;  /* 4 */
+  --space-2: 0.5rem;   /* 8 */
+  --space-3: 0.75rem;  /* 12 */
+  --space-4: 1rem;     /* 16 */
+  --space-5: 1.25rem;  /* 20 */
+  --space-6: 1.5rem;   /* 24 */
+  --space-8: 2rem;     /* 32 */
+  --space-10: 2.5rem;  /* 40 */
+  --space-12: 3rem;    /* 48 */
+  --space-16: 4rem;    /* 64 */
+  --space-20: 5rem;    /* 80 */
+  --space-24: 6rem;    /* 96 */
+  --space-32: 8rem;    /* 128 */
+
+  /* ---- Radii ----------------------------------------------------------- */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-full: 999px;
+
+  /* ---- Layout ---------------------------------------------------------- */
+  --width-prose: 38rem;
+  --width-input: 40rem;
+  --width-run: 72rem;
+  --width-report: 68rem;
+  --gutter: clamp(1.25rem, 4vw, 2.5rem);
+  --topbar-h: 3.5rem;
+
+  /* ---- Motion ---------------------------------------------------------- */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 140ms;
+  --dur-base: 240ms;
+  --dur-slow: 420ms;
+  --dur-view: 520ms;
+
+  /* ---- Color: light (default) ----------------------------------------- */
+  --c-bg: #ffffff;
+  --c-bg-subtle: #fafafa;
+  --c-surface: #ffffff;
+  --c-surface-2: #f5f5f5;
+  --c-surface-3: #ededed;
+  --c-border: #ebebeb;
+  --c-border-strong: #d6d6d6;
+  --c-text: #0a0a0a;
+  --c-text-2: #555555;
+  --c-text-3: #8f8f8f;
+  --c-text-4: #b5b5b5;
+  --c-inverse: #0a0a0a;
+  --c-on-inverse: #ffffff;
+  --c-focus: rgba(10, 10, 10, 0.14);
+  --c-highlight: rgba(10, 10, 10, 0.06);
+  --c-overlay: rgba(255, 255, 255, 0.86);
+  --c-evidence: #0a0a0a;
+  --c-evidence-fill: rgba(10, 10, 10, 0.08);
+
+  /* Code */
+  --c-code-bg: #fafafa;
+  --c-code-text: #1f1f1f;
+  --c-code-keyword: #0a0a0a;
+  --c-code-string: #6b6b6b;
+  --c-code-comment: #a3a3a3;
+  --c-code-number: #3d3d3d;
+
+  /* ---- Elevation (used sparingly) ------------------------------------ */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.03), 0 8px 24px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.04), 0 24px 64px rgba(0, 0, 0, 0.1);
+
+  /* ---- Art layer hooks (reserved; intentionally inert today) --------- */
+  --art-opacity: 0;
+  --art-blend: normal;
+  --art-tone: var(--c-text);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --c-bg: #000000;
+    --c-bg-subtle: #060606;
+    --c-surface: #0a0a0a;
+    --c-surface-2: #121212;
+    --c-surface-3: #1c1c1c;
+    --c-border: #1f1f1f;
+    --c-border-strong: #333333;
+    --c-text: #ededed;
+    --c-text-2: #a1a1a1;
+    --c-text-3: #6f6f6f;
+    --c-text-4: #4a4a4a;
+    --c-inverse: #ededed;
+    --c-on-inverse: #0a0a0a;
+    --c-focus: rgba(237, 237, 237, 0.18);
+    --c-highlight: rgba(237, 237, 237, 0.06);
+    --c-overlay: rgba(0, 0, 0, 0.82);
+    --c-evidence: #ededed;
+    --c-evidence-fill: rgba(237, 237, 237, 0.1);
+
+    --c-code-bg: #070707;
+    --c-code-text: #d4d4d4;
+    --c-code-keyword: #ffffff;
+    --c-code-string: #9a9a9a;
+    --c-code-comment: #5c5c5c;
+    --c-code-number: #c2c2c2;
+
+    --shadow-xs: none;
+    --shadow-sm: 0 0 0 1px rgba(255, 255, 255, 0.02);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.7);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+    --dur-view: 0ms;
+  }
+}
