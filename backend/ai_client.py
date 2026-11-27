@@ -4,6 +4,7 @@ import io
 import json
 import logging
 import re
+import threading
 import time
 
 from bs4 import BeautifulSoup, Comment
@@ -192,6 +193,32 @@ def _html_block(html: str, mode: str = "html") -> str:
     )
 
 
+_tl = threading.local()  # which code model answered the last call in this thread
+
+
+def _code_chat(messages: list[dict]) -> str:
+    """Code-model call: CODE_MODEL, then CODE_FALLBACK_MODEL once if it fails/times out."""
+    try:
+        out = _chat(messages, model=config.CODE_MODEL)
+        _tl.code_model = config.CODE_MODEL
+        return out
+    except AIError as e:
+        log.warning("code model %s failed (%s); falling back to %s", config.CODE_MODEL, e,
+                    config.CODE_FALLBACK_MODEL)
+        first_error = str(e)
+    try:
+        out = _chat(messages, model=config.CODE_FALLBACK_MODEL)
+    except AIError as e:
+        raise AIError(f"{first_error}; fallback {e}") from None
+    _tl.code_model = f"{config.CODE_FALLBACK_MODEL} (fallback)"
+    return out
+
+
+def last_code_model() -> str:
+    """The code model that produced the last scraper in this thread."""
+    return getattr(_tl, "code_model", config.CODE_MODEL)
+
+
 def _target_line(url: str, mode: str) -> str:
     if mode == "rendered":
         return f"Target URL (reference only, do NOT fetch; parse PAGE_HTML): {url}\n\n"
@@ -205,7 +232,7 @@ def write_scraper(url: str, html: str, mode: str = "html") -> str:
         + _html_block(html, mode)
         + "\nWrite the scraper now. Output only Python code."
     )
-    out = _chat([
+    out = _code_chat([
         {"role": "system", "content": _system_prompt(mode)},
         {"role": "user", "content": user},
     ])
@@ -227,7 +254,7 @@ def fix_scraper(url: str, html: str, code: str, problem: str, stderr: str, stdou
         + _html_block(html, mode)
         + "\nWrite a fixed, complete scraper. Output only Python code."
     )
-    out = _chat([
+    out = _code_chat([
         {"role": "system", "content": _system_prompt(mode)},
         {"role": "user", "content": user},
     ])

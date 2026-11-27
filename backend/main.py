@@ -96,7 +96,7 @@ def _check_attempt(job: dict, res: dict, html: str) -> tuple[bool, str, str, lis
     except ValueError as e:
         return False, "fail", str(e), []
 
-    ev_ok, ev_reason = verify.evidence_check(items, html)
+    ev_ok, ev_reason, items = verify.evidence_check(items, html)  # may drop unverified items
     if not ev_ok:
         return False, "fail", ev_reason, items
     head = f"{len(items)} items; {ev_reason}"
@@ -226,6 +226,7 @@ def _run_job(job_id: str, url: str, saved: dict | None = None) -> None:
                 except ai_client.AIError as e:
                     attempt.update(verdict="fail", reason=f"AI code model failed: {e}")
                     continue
+                job["models"]["code"] = attempt["code_model"] = ai_client.last_code_model()
                 attempt.update(code=code, reason="running in sandbox")
 
             run_code, build_error = code, None

@@ -7,7 +7,10 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 VULTR_BASE_URL = "https://api.vultrinference.com/v1"
-CODE_MODEL = "glm-5.3"
+# Benchmarked 2026-11-27 (write /shop, fix ?v=2, rendered Clas Ohlson; 2 runs each):
+# glm-5.3-flash 6/6 working in 0.7-16 s; glm-5.3 5/6, up to 89 s and one 120 s timeout.
+CODE_MODEL = "glm-5.3-flash"
+CODE_FALLBACK_MODEL = "glm-5.3"  # tried once if the primary fails or times out
 # Benchmarked 2026-11-27 on real shop + Clas Ohlson screenshots (12 runs each):
 # qwen3.8-flash-next 12/12 correct in 2-9 s; nemotron with reasoning 9/12, 10-95 s
 # (reasoning runaway); nemotron with reasoning off 10/12 in 1-2 s.

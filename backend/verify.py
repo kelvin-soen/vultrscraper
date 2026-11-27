@@ -136,16 +136,26 @@ def _near(value: int, pool) -> bool:
     return any(abs(value - p) <= PRICE_TOLERANCE for p in pool)
 
 
-def evidence_check(items: list[dict], html: str) -> tuple[bool, str]:
+EVIDENCE_KEEP_RATIO = 0.8  # >= this share verified: keep those, drop the rest; below: fail
+
+
+def evidence_check(items: list[dict], html: str) -> tuple[bool, str, list[dict]]:
+    """Returns (ok, reason, kept_items). Items whose price is not in the visible page
+    text are dropped when at least EVIDENCE_KEEP_RATIO of the items are verified;
+    below that the whole attempt fails (the scraper is probably reading the wrong field)."""
     if not (html or "").strip():
-        return True, "evidence check skipped (no page HTML)"
+        return True, "evidence check skipped (no page HTML)", items
     found = price_candidates(visible_text(html))
+    kept = [it for it in items if _near(it["price_sek"], found)]
     missing = [it for it in items if not _near(it["price_sek"], found)]
-    if missing:
-        shown = "; ".join(f"{it['name'][:40]}={it['price_sek']}" for it in missing[:5])
-        return False, (f"evidence check: {len(missing)}/{len(items)} extracted prices do not appear "
-                       f"in the page's visible text: {shown}")
-    return True, f"evidence check: all {len(items)} prices appear in the page text"
+    if not missing:
+        return True, f"evidence check: all {len(items)} prices appear in the page text", items
+    shown = "; ".join(f"{it['name'][:40]}={it['price_sek']}" for it in missing[:5])
+    if len(kept) >= EVIDENCE_KEEP_RATIO * len(items):
+        return True, (f"evidence check: {len(kept)} verified, {len(missing)} removed "
+                      f"(price not visible on page: {shown})"), kept
+    return False, (f"evidence check: {len(missing)}/{len(items)} extracted prices do not appear "
+                   f"in the page's visible text: {shown}"), items
 
 
 def compare_prices(items: list[dict], visible: list[int], cropped: bool) -> tuple[bool, str]:
